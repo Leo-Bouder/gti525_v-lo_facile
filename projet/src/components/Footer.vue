@@ -1,9 +1,15 @@
 <script setup>
-// Pas besoin de props ni de logique complexe pour un header simple
 </script>
 
 <template>
-  <v-bottom-navigation class="justify-center border-t-lg bg-light-green-lighten-3">
-    <h1>Pied de page</h1>
-  </v-bottom-navigation>
+  <footer class="flex-start border-t-lg bg-light-green-lighten-3">
+    <div class="w-100 text-left pl-6">
+      <h2>Équipe 02</h2>
+      <p>Léo BOUDER, Simon Castonguay, Joseph Feghali</p>
+    </div>
+  </footer>
 </template>
+
+<style scoped>
+
+</style>

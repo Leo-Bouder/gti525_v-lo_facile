@@ -1,12 +1,13 @@
 <script setup>
-// Pas besoin de props ni de logique complexe pour un header simple
 </script>
 
 <template>
   <v-app-bar class="bg-light-green-lighten-3 border-b-lg">
-    <v-app-bar-title>
-      <v-icon class="mr-2 text-grey-darken-3">mdi-bike</v-icon>
-      Vélo Facile
+    <v-app-bar-title class="text-left">
+      <div class="d-flex align-center">
+        <img src="../assets/logo.png" alt="Logo Vélo Facile" style="height: 40px; margin-right: 12px;">
+        <span style="font-size: 2rem;">Vélo Facile</span>
+      </div>
     </v-app-bar-title>
     <v-spacer />
     <!-- Navigation avec router-link -->

@@ -1,7 +1,24 @@
 <script setup>
+import Button from '../components/button.vue';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const goToSavoir = () => {
+  router.push('/savoir');
+}
 </script>
 
 <template>
-    <h1 class="mt-10 text-grey-darken-3">Home</h1>
     <!-- Ton contenu ici -->
+    <div class="d-flex flex-wrap justify-center align-center" style="min-height: 100vh;">
+        <div class="mr-8 mb-4">
+            <h1 class="text-grey-darken-3 font-weight-bold">Bienvenue sur Vélo Facile</h1>
+            <Button color="#C5E1A5" text="En savoir plus" @click="goToSavoir" />
+        </div>
+        <img
+            src="../assets/vélo_facile_fond.png"
+            alt="Cycliste"
+            style="max-width: 400px; border-radius: 20px; box-shadow: 0 4px 24px #0002;"/>
+    </div>
 </template>
