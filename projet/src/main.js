@@ -10,7 +10,7 @@ import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
 import '@mdi/font/css/materialdesignicons.css'
-// 2. Create Vuetify instance
+// 2. Créer l'instance de Vuetify
 const vuetify = createVuetify({
   components,
   directives,
