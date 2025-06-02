@@ -5,17 +5,14 @@
     </v-card-title>
     
     <v-card-text class="pa-0">
-      <!-- Map Container -->
       <div class="map-container mb-3">
         <div id="map" ref="mapContainer"></div>
         
-        <!-- Loading overlay -->
         <div v-if="loading" class="map-loading-overlay">
           <v-progress-circular indeterminate color="primary"></v-progress-circular>
           <div class="mt-2">Chargement...</div>
         </div>
         
-        <!-- Map Controls -->
         <div class="map-controls">
           <v-btn
             icon
@@ -40,7 +37,6 @@
         </div>
       </div>
       
-      <!-- Dropdown -->
       <div class="px-3 pb-3">
         <DropDown
         v-model="selectedTerr"
@@ -108,7 +104,6 @@ export default {
 
         this.dropDownItems.items = temp_terr.sort((a, b) => a.text.localeCompare(b.text))
         
-        // Add to map if map is ready
         if (this.map && this.geojsonData) {
           this.addGeoJsonLayer(this.geojsonData)
         }
@@ -119,38 +114,32 @@ export default {
       }
     },
     initMap() {
-      // Montreal coordinates
       const montrealLat = 45.5017
       const montrealLng = -73.5673
       
-      // Initialize map
       this.map = L.map(this.$refs.mapContainer, {
         center: [montrealLat, montrealLng],
         zoom: 10,
-        zoomControl: false, // We'll use custom controls
+        zoomControl: false,
         attributionControl: false
       })
       
-      // Add tile layer (using a light grayscale theme similar to your screenshot)
       L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '© OpenStreetMap contributors © CARTO',
         subdomains: 'abcd',
         maxZoom: 19
       }).addTo(this.map)
       
-      // Add GeoJSON if loaded
       if (this.geojsonData) {
         this.addGeoJsonLayer(this.geojsonData)
       }
     },
     
     addGeoJsonLayer(geojsonData) {
-      // Remove existing layer if present
       if (this.geojsonLayer) {
         this.map.removeLayer(this.geojsonLayer)
       }
       
-      // Add new GeoJSON layer
       this.geojsonLayer = L.geoJSON(geojsonData, {
         style: (feature) => ({
           fillColor: '#e0e0e0',
@@ -160,7 +149,6 @@ export default {
           fillOpacity: 0.3
         }),
         onEachFeature: (feature, layer) => {
-          // Add hover effects
           layer.on('mouseover', () => {
             if(this.layerIsSelected(layer)){return;}
             layer.setStyle({
@@ -177,7 +165,6 @@ export default {
             })
           })
           
-          // Add click handler if needed
           layer.on('click', () => {
             this.setLayer(layer)
             this.selectedTerr = feature.properties.NOM
@@ -185,7 +172,6 @@ export default {
         }
       }).addTo(this.map)
       
-      // Fit map to GeoJSON bounds
       this.map.fitBounds(this.geojsonLayer.getBounds(), { padding: [10, 10] })
     },
 
@@ -212,7 +198,6 @@ export default {
       
       this.geojsonLayer.eachLayer((layer) => {
         const properties = layer.feature.properties
-        // Check NOM property (territory name in your GeoJSON structure)
         if (properties && properties.NOM === territoryName) {
           foundLayer = layer
         }
@@ -247,12 +232,13 @@ export default {
 
 <style scoped>
 .district-map-sidebar {
-  height: 100vh;
+  height: 100%;
   width: 100%;
   max-width: 400px;
   min-width: 320px;
   background-color: #cdd6bd;
   border-radius: 0;
+  padding-left: 1rem;
 }
 
 @media (max-width: 960px) {
@@ -317,7 +303,6 @@ export default {
   background-color: #f5f5f5;
 }
 
-/* Override Leaflet default styles */
 :deep(.leaflet-container) {
   background-color: #f8f8f8;
 }

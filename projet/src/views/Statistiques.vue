@@ -75,14 +75,15 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="d-flex flex-column mt-8" style="min-height: 100vh;">
-    <v-card class="mx-4 mb-4" style="height: fit-content; background-color: #C5E1A5;">
+  <div class="d-flex flex-column pt-4" style="height: 100%;">
+    <h2 class="ml-4 pb-4" style="text-align: left;">Statistiques</h2>
+    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="height: fit-content; background-color: #C5E1A5;">
       <div>
         <Search v-model="search" :items="data" :display-fields="['ID', 'Nom', 'Statut', 'Annee_implante']"/>
       </div>
     </v-card>
 
-    <div class="mr-8 mb-4">
+    <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1;">
       <v-data-table
         v-model:search="search"
         :headers="headers"
@@ -92,7 +93,6 @@ onMounted(async () => {
         hover
         bordered
         fixed-header
-        height="500"
       >
         <template #headers="{ columns }">
           <tr>
