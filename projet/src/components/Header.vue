@@ -19,7 +19,7 @@
     <v-btn class="pr-3" text to="/statistiques" tag="router-link">
       Statistiques
     </v-btn>
-    <v-btn class="pr-3" text to="/poi" tag="router-link">
+    <v-btn class="pr-3" text to="/interet" tag="router-link">
       Points d'intérêt
     </v-btn>
     <v-btn text to="/connexion" tag="router-link">
