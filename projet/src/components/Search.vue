@@ -40,7 +40,7 @@ const filteredResults = computed(() => {
 </script>
 
 <template>
-  <div class="pt-4 px-4">
+  <div>
     <v-text-field
       v-model="search"
       label="Rechercher"

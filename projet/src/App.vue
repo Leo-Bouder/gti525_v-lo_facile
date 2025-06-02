@@ -8,13 +8,13 @@ import { computed } from 'vue'
 
 const route = useRoute()
 
-const pagesWithMenu = ['PointsInteret', 'Statistiques', 'Reseau'];
+const pagesWithMenu = ['Interet', 'Statistiques', 'Reseau'];
 
 const hasMenu = computed(() => pagesWithMenu.includes(route.name))
 </script>
 
 <template>
-  <v-app>
+  <v-app class="app-wrapper">
     <Header />
     <v-main>
       <MainContainer :haveMenu="hasMenu">
@@ -40,5 +40,13 @@ const hasMenu = computed(() => pagesWithMenu.includes(route.name))
 }
 .main-container {
   max-width: 1280px;
+  width: 100%;
+  height: 100vh;
+}
+.v-main {
+  max-height: 100vh;
+}
+td {
+  text-align: left;
 }
 </style>
