@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import Papa from 'papaparse';
-import csvUrl from '../data/compteurs.csv?url';
+import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
 
 const search = ref('')
@@ -10,7 +10,7 @@ const sortDesc = ref(false)
 const data = ref([])
 
 const headers = [
-  {
+    {
     title: 'ID',
     text: 'ID',
     key: 'ID',
@@ -18,26 +18,47 @@ const headers = [
     sortable: true,
   },
   {
+    title: 'Arrondissement',
+    text: 'Arrondissement',
+    key: 'Arrondissement',
+    align: 'start',
+    sortable: true,
+  },
+  {
+    title: 'Type',
+    text: 'Type',
+    key: 'Type',
+    align: 'start',
+    sortable: true,
+  },
+  {
     title: 'Nom',
     text: 'Nom',
-    key: 'Nom',
+    key: 'Nom_parc_lieu',
     align: 'start',
     sortable: true,
   },
   {
-    title: 'Statut',
-    text: 'Statut',
-    key: 'Statut',
+    title: 'Remarque',
+    text: 'Remarque',
+    key: 'Remarque',
     align: 'start',
     sortable: true,
   },
   {
-    title: 'Année Implantation',
-    text: 'Année Implantation',
-    key: 'Annee_implante',
+    title: 'Adresse',
+    text: 'Adresse',
+    key: 'Adresse',
     align: 'start',
     sortable: true,
   },
+  {
+    title: 'Carte',
+    text: 'Carte',
+    key: 'map',
+    align: 'center',
+    sortable: false,
+  }
 ]
 
 const sortedData = computed(() => {
@@ -72,21 +93,54 @@ onMounted(async () => {
   }
 });
 
+const openMap = (item) => {
+  console.log('Item received in openMap:', item);
+  
+  let latitude = null;
+  let longitude = null;
+
+  if (item && item.raw) {
+    // Try accessing from item.raw first
+    latitude = item.raw.Latitude;
+    longitude = item.raw.Longitude;
+  }
+  
+  // If not found in item.raw, try accessing directly from item (for cases where raw might be undefined)
+  if ((latitude === null || longitude === null) && item) {
+      latitude = item.Latitude;
+      longitude = item.Longitude;
+  }
+
+  if (latitude && longitude) {
+    console.log('Opening map with coordinates:', latitude, longitude);
+    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    window.open(url, '_blank');
+  } else {
+    console.warn('Coordonnées de localisation manquantes ou invalides pour cet élément', item);
+    alert('Localisation non disponible pour cet élément.');
+  }
+};
+
 </script>
 
 <template>
   <div class="d-flex flex-column mt-8" style="min-height: 100vh;">
     <v-card class="mx-4 mb-4" style="height: fit-content; background-color: #C5E1A5;">
       <div>
-        <Search v-model="search" :items="data" :display-fields="['ID', 'Nom', 'Statut', 'Annee_implante']"/>
+        <Search 
+          v-model="search" 
+          :items="data" 
+          :display-fields="['ID', 'Arrondissement', 'Nom_parc_lieu']"
+        />
       </div>
-    </v-card>
-
+    </v-card>  
+    
     <div class="mr-8 mb-4">
       <v-data-table
         v-model:search="search"
         :headers="headers"
         :items="sortedData"
+        :items-per-page="20"
         class="elevation-2 rounded-lg bg-light-green-lighten-5"
         density="comfortable"
         hover
@@ -115,6 +169,15 @@ onMounted(async () => {
               </v-icon>
             </th>
           </tr>
+        </template>
+        <template #[`item.map`]="{ item }">
+          <v-icon
+            size="small"
+            @click="openMap(item)"
+            color="green"
+          >
+            mdi-map-marker
+          </v-icon>
         </template>
       </v-data-table>
     </div>
