@@ -3,7 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import Papa from 'papaparse';
 import csvUrl from '../data/compteurs.csv?url';
 import Search from '../components/Search.vue';
-
+import { store } from '../components/store';
 const search = ref('')
 const sortBy = ref([])
 const sortDesc = ref(false)
@@ -40,11 +40,23 @@ const headers = [
   },
 ]
 
+const filteredData =computed(() => {
+  if(!store.year) return data.value;
+
+  return data.value.filter(item =>{
+    const year = parseInt(item.Annee_implante, 10);
+    return !isNaN(year) && year >= parseInt(store.year, 10);
+  
+
+  });
+});
+
+
 const sortedData = computed(() => {
-  if (!sortBy.value.length) return data.value;
+  if (!sortBy.value.length) return filteredData.value;
   
   const key = sortBy.value[0];
-  return [...data.value].sort((a, b) => {
+  return [...filteredData.value].sort((a, b) => {
     const aValue = a[key];
     const bValue = b[key];
     
