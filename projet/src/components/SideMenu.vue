@@ -45,6 +45,17 @@
         @update:modelValue="dropDownChanged"
         ></DropDown>
       </div>
+
+      <div>
+        <v-date-input
+         v-if="this.$route.name === 'Statistiques'"
+         label="Choisir l'année"
+         @blur="updateDate"
+         v-model="year"
+         view-mode="year"
+        ></v-date-input>
+      </div>
+
     </v-card-text>
   </v-card>
 </template>
@@ -54,11 +65,13 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import data from "../data/territoires.geojson?raw"
 import DropDown from './DropDown.vue'
-
+import { VDateInput } from 'vuetify/labs/VDateInput'
+import { store } from './store'
 export default {
   name: 'SideMenu',
   components: {
-    DropDown
+    DropDown,
+    VDateInput
   },
   data() {
     return {
@@ -71,7 +84,8 @@ export default {
         title:"Arrondissement"
       },
       selectedTerr: "",
-      currentLayer: null
+      currentLayer: null,
+      year: ""
     }
   },
   mounted() {
@@ -114,6 +128,7 @@ export default {
       }
     },
     initMap() {
+      console.log(this.$route)
       const montrealLat = 45.5017
       const montrealLng = -73.5673
       
@@ -225,7 +240,12 @@ export default {
     dropDownChanged(terr) {
       const layer = this.getLayerByTerritoryName(terr);
       this.setLayer(layer);
+    },
+
+    updateDate(){
+      store.year =  this.year.toString().split(' ')[3];
     }
+
   }
 }
 </script>

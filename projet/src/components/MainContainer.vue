@@ -1,9 +1,22 @@
-<script setup>
+<script>
+import { watch } from 'vue';
 import SideMenu from './SideMenu.vue';
-defineProps
-({
-    haveMenu: Boolean
-})
+import {store} from "./store"
+export default {
+  components: { 
+    SideMenu
+ },
+  data() {
+    return {
+      year: ''
+    }
+  },
+  methods: {
+  },
+  props: {
+    haveMenu: true
+  }
+}
 </script>
 
 <template>
