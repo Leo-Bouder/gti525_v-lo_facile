@@ -41,13 +41,15 @@ const headers = [
 ]
 
 const filteredData =computed(() => {
-  if(!store.year) return data.value;
-
   return data.value.filter(item =>{
-    const year = parseInt(item.Annee_implante, 10);
-    return !isNaN(year) && year >= parseInt(store.year, 10);
-  
+    const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
+    const selectedArr = store.arrondissement.trim().toLowerCase();
+    const matchesArr = !selectedArr || selectedArr === 'all' || itemArr === selectedArr;
 
+    const year = parseInt(item.Annee_implante, 10);
+    const matchesYear = !store.year || (!isNaN(year) && year >= parseInt(store.year, 10));
+
+    return matchesArr && matchesYear;
   });
 });
 
