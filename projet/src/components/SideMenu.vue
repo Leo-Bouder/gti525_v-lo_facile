@@ -304,9 +304,7 @@ export default {
     },
 
     updateTerr(){
-      console.log("Territoire selectionne: ", this.selectedTerr);
       store.arrondissement = this.selectedTerr;
-      console.log("store.arrondissement = ", store.arrondissement);
     }
 
   }
