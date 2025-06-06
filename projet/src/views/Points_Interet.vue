@@ -63,14 +63,12 @@ const headers = [
 ]
 
 const filteredData = computed(()=> {
-  console.log(store.arrondissement)
   if(!store.arrondissement || store.arrondissement === 'ALL'){
     return data.value;
   }
   return data.value.filter(item =>{
     const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
     const selectedArr = store.arrondissement.trim().toLowerCase();
-    console.log('Comparing:', `[${itemArr}] vs [${selectedArr}]`);
     return itemArr === selectedArr;
 });
 });
