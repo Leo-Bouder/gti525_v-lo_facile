@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import Papa from 'papaparse';
 import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
+import { store } from '../components/store';
 
 const search = ref('')
 const sortBy = ref([])
@@ -61,11 +62,24 @@ const headers = [
   }
 ]
 
+const filteredData = computed(()=> {
+  console.log(store.arrondissement)
+  if(!store.arrondissement || store.arrondissement === 'ALL'){
+    return data.value;
+  }
+  return data.value.filter(item =>{
+    const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
+    const selectedArr = store.arrondissement.trim().toLowerCase();
+    console.log('Comparing:', `[${itemArr}] vs [${selectedArr}]`);
+    return itemArr === selectedArr;
+});
+});
+
 const sortedData = computed(() => {
-  if (!sortBy.value.length) return data.value;
+  if (!sortBy.value.length) return filteredData.value;
   
   const key = sortBy.value[0];
-  return [...data.value].sort((a, b) => {
+  return [...filteredData.value].sort((a, b) => {
     const aValue = a[key];
     const bValue = b[key];
     
