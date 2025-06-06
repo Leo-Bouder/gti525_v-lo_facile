@@ -39,10 +39,11 @@
       
       <div class="px-3 pb-3">
         <DropDown
-        v-model="selectedTerr"
         :items="dropDownItems.items"
         :title="dropDownItems.title"
+        v-model="selectedTerr"
         @update:modelValue="dropDownChanged"
+        @blur="updateTerr"
         ></DropDown>
       </div>
 
@@ -236,6 +237,16 @@ export default {
     },
 
     setLayer(layer) {
+      if(!layer){
+        if(this.currentLayer){
+          this.currentLayer.setStyle({
+            fillOpacity: 0.3,
+            fillColor:'#e0e0e0'
+          });
+        }
+        this.currentLayer= null;
+        return;
+      }
       layer.setStyle({
         fillOpacity: 0.5,
         fillColor: '#F9BF90'
@@ -285,10 +296,17 @@ export default {
     dropDownChanged(terr) {
       const layer = this.getLayerByTerritoryName(terr);
       this.setLayer(layer);
+      this.updateTerr();
     },
 
     updateDate(){
       store.year =  this.year.toString().split(' ')[3];
+    },
+
+    updateTerr(){
+      console.log("Territoire selectionne: ", this.selectedTerr);
+      store.arrondissement = this.selectedTerr;
+      console.log("store.arrondissement = ", store.arrondissement);
     }
 
   }
