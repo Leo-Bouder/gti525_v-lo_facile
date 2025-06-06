@@ -46,13 +46,53 @@
         ></DropDown>
       </div>
 
-      <div>
+      <div v-if="this.$route.name === 'Statistiques'">
+        <p class="filter-label">Compteurs implantés à partir de :</p>
         <v-date-input
-         v-if="this.$route.name === 'Statistiques'"
          label="Choisir l'année"
          @blur="updateDate"
          v-model="year"
          view-mode="year"
+        ></v-date-input>
+      </div>
+      <div v-if="this.$route.name === 'Interet'">
+        <p class="filter-label">Type de lieu :</p>
+        <DropDown
+        v-model="type"
+        label="Type de lieu"
+        :items="typeItems"
+        @update:modelValue="dropDownChanged"
+        ></DropDown>
+      </div>
+      <div v-if="this.$route.name === 'Reseau'">
+        <p class="filter-label">Type du réseau :</p>
+        <v-btn-toggle 
+        v-model="networkType" 
+        class="toggle-group"
+        density="compact" 
+        rounded
+        mandatory
+        >
+          <v-btn value="saisonnier">Saisonnier</v-btn>
+          <v-btn value="4saisons">4 saisons</v-btn>
+        </v-btn-toggle>
+
+        <p class="filter-label">Type de voie :</p>
+        <v-checkbox v-model="protectedLane" label="Voies protégées" />
+        <v-checkbox v-model="sharedLane" label="Voies partagées" />
+
+        <p class="filter-label">Les plus populaires :</p>
+        <v-date-input
+         label="De :"
+         v-model="dateFrom"
+         view-mode="year"
+         density="compact"
+        ></v-date-input>
+        <v-date-input
+         label="À :"
+         v-model="dateTo"
+         view-mode="year"
+         density="compact"
         ></v-date-input>
       </div>
 
@@ -85,7 +125,12 @@ export default {
       },
       selectedTerr: "",
       currentLayer: null,
-      year: ""
+      year: "",
+
+      typeItems:[
+      { text: "Fontaine à boire", value: "Fontaine à boire" },
+      { text: "Atelier réparation", value: "Atelier réparation" }
+      ]
     }
   },
   mounted() {
@@ -128,7 +173,7 @@ export default {
       }
     },
     initMap() {
-      console.log(this.$route)
+      console.log(this)
       const montrealLat = 45.5017
       const montrealLng = -73.5673
       
@@ -329,5 +374,22 @@ export default {
 
 :deep(.leaflet-control-attribution) {
   display: none;
+}
+
+.filter-label{
+  margin-bottom: 0.2rem;
+  font-weight: bold;
+  text-align: left;
+  font-size: 14px;
+  color:#333;
+  width: 100%;
+}
+
+.toggle-group{
+  width: 100%;
+  max-width: 250px;
+  background-color: #d1d8c0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>
