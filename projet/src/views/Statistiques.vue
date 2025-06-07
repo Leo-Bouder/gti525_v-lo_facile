@@ -78,7 +78,6 @@ onMounted(async () => {
       header: true,
       complete: (results) => {
         data.value = results.data;
-        console.log('Données chargées:', data.value);
       }
     });
   } catch (error) {
@@ -91,13 +90,13 @@ onMounted(async () => {
 <template>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Statistiques</h2>
-    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="height: fit-content; background-color: #C5E1A5;">
+    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: #C5E1A5;">
       <div>
         <Search v-model="search" :items="data" :display-fields="['ID', 'Nom', 'Statut', 'Annee_implante']"/>
       </div>
     </v-card>
 
-    <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1;">
+    <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table
         v-model:search="search"
         :headers="headers"

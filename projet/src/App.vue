@@ -1,5 +1,4 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue'
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import MainContainer from './components/MainContainer.vue'
@@ -41,7 +40,7 @@ const hasMenu = computed(() => pagesWithMenu.includes(route.name))
 .main-container {
   max-width: 1280px;
   width: 100%;
-  height: 100vh;
+  height: 100%;
 }
 .v-main {
   max-height: 100vh;

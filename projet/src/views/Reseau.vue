@@ -55,6 +55,8 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import data from "../data/reseau_cyclable.geojson?raw"
+import { store } from '../components/store';
+import { nextTick } from 'vue';
 
 export default {
   name: 'Reseau',
@@ -72,24 +74,11 @@ export default {
       currentLayer: null
     }
   },
-  mounted() {
-    this.initMap()
-    this.loadGeoJsonData()
-  },
-  beforeUnmount() {
-    if (this.map) {
-      this.map.remove()
-    }
-  },
-  watch: {
-    geojsonData: {
-      handler(newData) {
-        if (newData && this.map) {
-          this.addGeoJsonLayer(newData)
-        }
-      },
-      deep: true
-    }
+  async mounted() {
+    await nextTick();
+    requestIdleCallback(() => {
+      this.initMap()
+    })
   },
   methods: {
     async loadGeoJsonData() {
@@ -103,8 +92,6 @@ export default {
         }
       } catch (error) {
         console.error('Error loading GeoJSON data:', error)
-      } finally {
-        this.loading = false
       }
     },
     initMap() {
@@ -123,27 +110,37 @@ export default {
         subdomains: 'abcd',
         maxZoom: 50
       }).addTo(this.map)
-      
-      if (this.geojsonData) {
+
+      if(store.geojsonReseau) {
         this.addGeoJsonLayer(this.geojsonData)
       }
+      else {
+        this.loadGeoJsonData()
+      }
+      this.loading = false
     },
     
     addGeoJsonLayer(geojsonData) {
       if (this.geojsonLayer) {
         this.map.removeLayer(this.geojsonLayer)
       }
-      
-      this.geojsonLayer = L.geoJSON(geojsonData, {
-        style: (feature) => ({
-          fillColor: '#e0e0e0',
-          weight: 1,
-          opacity: 1,
-          color: '#666',
-          fillOpacity: 0.3
+      if(store.geojsonReseau) {
+        store.geojsonReseau.addTo(this.map)
+        this.geojsonLayer = store.geojsonReseau
+      }
+      else {
+        this.geojsonLayer = L.geoJSON(geojsonData, {
+          style: (feature) => ({
+            fillColor: '#e0e0e0',
+            weight: 1,
+            opacity: 1,
+            color: '#666',
+            fillOpacity: 0.3
+          })
         })
-      }).addTo(this.map)
-      
+        store.geojsonReseau = this.geojsonLayer;
+        this.geojsonLayer.addTo(this.map);
+      }
       this.map.fitBounds(this.geojsonLayer.getBounds(), { padding: [10, 10] })
     },
 
