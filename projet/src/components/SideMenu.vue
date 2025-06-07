@@ -174,7 +174,6 @@ export default {
       }
     },
     initMap() {
-      console.log(this)
       const montrealLat = 45.5017
       const montrealLng = -73.5673
       
