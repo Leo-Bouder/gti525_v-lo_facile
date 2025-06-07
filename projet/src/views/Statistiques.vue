@@ -38,6 +38,13 @@ const headers = [
     align: 'start',
     sortable: true,
   },
+  {
+    title: 'Carte',
+    text: 'Carte',
+    key: 'map',
+    align: 'center',
+    sortable: false,
+  }
 ]
 
 const filteredData =computed(() => {
@@ -85,6 +92,31 @@ onMounted(async () => {
   }
 });
 
+const openMap = (item) => {
+  let latitude = null;
+  let longitude = null;
+
+  if (item && item.raw) {
+    // Try accessing from item.raw first
+    latitude = item.raw.Latitude;
+    longitude = item.raw.Longitude;
+  }
+  
+  // If not found in item.raw, try accessing directly from item (for cases where raw might be undefined)
+  if ((latitude === null || longitude === null) && item) {
+      latitude = item.Latitude;
+      longitude = item.Longitude;
+  }
+
+  if (latitude && longitude) {
+    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
+    window.open(url, '_blank');
+  } else {
+    console.warn('Coordonnées de localisation manquantes ou invalides pour cet élément', item);
+    alert('Localisation non disponible pour cet élément.');
+  }
+};
+
 </script>
 
 <template>
@@ -128,6 +160,15 @@ onMounted(async () => {
               </v-icon>
             </th>
           </tr>
+        </template>
+        <template #[`item.map`]="{ item }">
+          <v-icon
+            size="small"
+            @click="openMap(item)"
+            color="green"
+          >
+            mdi-map-marker
+          </v-icon>
         </template>
       </v-data-table>
     </div>
