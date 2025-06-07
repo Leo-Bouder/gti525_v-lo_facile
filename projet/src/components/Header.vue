@@ -2,7 +2,7 @@
 </script>
 
 <template>
-  <v-app-bar class="bg-light-green-lighten-3 border-b-lg">
+  <v-app-bar class="border-b-lg" style="background-color: var(--primary-main);">
     <v-app-bar-title class="text-left">
       <RouterLink to="/"  custom v-slot="{ navigate, href }" tag="router-link">
         <div @click="navigate" :href="href" style="cursor: pointer;" class="d-flex align-center">

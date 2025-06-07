@@ -134,7 +134,7 @@ const openMap = (item) => {
 <template>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
-    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: #C5E1A5;">
+    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
       <div>
         <Search 
           v-model="search" 
@@ -161,7 +161,7 @@ const openMap = (item) => {
             <th 
               v-for="column in columns" 
               :key="column.key" 
-              style="background: #C5E1A5; color: #213547; cursor: pointer;"
+              style="background: var(--primary-main); color: #213547; cursor: pointer;"
               @click="() => {
                 if (sortBy[0] === column.key) {
                   sortDesc = !sortDesc;
@@ -182,7 +182,7 @@ const openMap = (item) => {
           <v-icon
             size="small"
             @click="openMap(item)"
-            color="green"
+            color="var(--accent-color)"
           >
             mdi-map-marker
           </v-icon>
@@ -194,7 +194,7 @@ const openMap = (item) => {
 
 <style scoped>
 .v-data-table thead th {
-  background: #C5E1A5;
+  background: var(--primary-main);
   color: #213547;
   font-weight: bold;
 }

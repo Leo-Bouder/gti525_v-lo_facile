@@ -316,7 +316,7 @@ export default {
   width: 100%;
   max-width: 400px;
   min-width: 320px;
-  background-color: #cdd6bd;
+  background-color: var(--primary-main);
   border-radius: 0;
   padding-left: 1rem;
 }

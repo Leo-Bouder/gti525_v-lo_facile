@@ -8,7 +8,7 @@
             <div id="map" ref="mapContainer"></div>
             
             <div v-if="loading" class="map-loading-overlay">
-              <v-progress-circular indeterminate color="primary"></v-progress-circular>
+              <v-progress-circular indeterminate color="#000000"></v-progress-circular>
               <div class="mt-2">Chargement...</div>
             </div>
             
