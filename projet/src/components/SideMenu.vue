@@ -39,12 +39,64 @@
       
       <div class="px-3 pb-3">
         <DropDown
-        v-model="selectedTerr"
         :items="dropDownItems.items"
         :title="dropDownItems.title"
+        v-model="selectedTerr"
+        @update:modelValue="dropDownChanged"
+        @blur="updateTerr"
+        ></DropDown>
+      </div>
+
+      <div v-if="this.$route.name === 'Statistiques'">
+        <p class="filter-label">Compteurs implantés à partir de :</p>
+        <v-date-input
+         label="Choisir l'année"
+         @blur="updateDate"
+         v-model="year"
+         view-mode="year"
+        ></v-date-input>
+      </div>
+      <div v-if="this.$route.name === 'Interet'">
+        <p class="filter-label">Type de lieu :</p>
+        <DropDown
+        v-model="type"
+        label="Type de lieu"
+        :items="typeItems"
         @update:modelValue="dropDownChanged"
         ></DropDown>
       </div>
+      <div v-if="this.$route.name === 'Reseau'">
+        <p class="filter-label">Type du réseau :</p>
+        <v-btn-toggle 
+        v-model="networkType" 
+        class="toggle-group"
+        density="compact" 
+        rounded
+        mandatory
+        >
+          <v-btn value="saisonnier">Saisonnier</v-btn>
+          <v-btn value="4saisons">4 saisons</v-btn>
+        </v-btn-toggle>
+
+        <p class="filter-label">Type de voie :</p>
+        <v-checkbox v-model="protectedLane" label="Voies protégées" />
+        <v-checkbox v-model="sharedLane" label="Voies partagées" />
+
+        <p class="filter-label">Les plus populaires :</p>
+        <v-date-input
+         label="De :"
+         v-model="dateFrom"
+         view-mode="year"
+         density="compact"
+        ></v-date-input>
+        <v-date-input
+         label="À :"
+         v-model="dateTo"
+         view-mode="year"
+         density="compact"
+        ></v-date-input>
+      </div>
+
     </v-card-text>
   </v-card>
 </template>
@@ -54,11 +106,13 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import data from "../data/territoires.geojson?raw"
 import DropDown from './DropDown.vue'
-
+import { VDateInput } from 'vuetify/labs/VDateInput'
+import { store } from './store'
 export default {
   name: 'SideMenu',
   components: {
-    DropDown
+    DropDown,
+    VDateInput
   },
   data() {
     return {
@@ -71,7 +125,13 @@ export default {
         title:"Arrondissement"
       },
       selectedTerr: "",
-      currentLayer: null
+      currentLayer: null,
+      year: "",
+
+      typeItems:[
+      { text: "Fontaine à boire", value: "Fontaine à boire" },
+      { text: "Atelier réparation", value: "Atelier réparation" }
+      ]
     }
   },
   mounted() {
@@ -114,6 +174,7 @@ export default {
       }
     },
     initMap() {
+      console.log(this)
       const montrealLat = 45.5017
       const montrealLng = -73.5673
       
@@ -176,6 +237,16 @@ export default {
     },
 
     setLayer(layer) {
+      if(!layer){
+        if(this.currentLayer){
+          this.currentLayer.setStyle({
+            fillOpacity: 0.3,
+            fillColor:'#e0e0e0'
+          });
+        }
+        this.currentLayer= null;
+        return;
+      }
       layer.setStyle({
         fillOpacity: 0.5,
         fillColor: '#F9BF90'
@@ -225,7 +296,17 @@ export default {
     dropDownChanged(terr) {
       const layer = this.getLayerByTerritoryName(terr);
       this.setLayer(layer);
+      this.updateTerr();
+    },
+
+    updateDate(){
+      store.year =  this.year.toString().split(' ')[3];
+    },
+
+    updateTerr(){
+      store.arrondissement = this.selectedTerr;
     }
+
   }
 }
 </script>
@@ -309,5 +390,22 @@ export default {
 
 :deep(.leaflet-control-attribution) {
   display: none;
+}
+
+.filter-label{
+  margin-bottom: 0.2rem;
+  font-weight: bold;
+  text-align: left;
+  font-size: 14px;
+  color:#333;
+  width: 100%;
+}
+
+.toggle-group{
+  width: 100%;
+  max-width: 250px;
+  background-color: #d1d8c0;
+  border-radius: 8px;
+  overflow: hidden;
 }
 </style>

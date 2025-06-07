@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue';
 import Papa from 'papaparse';
 import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
+import { store } from '../components/store';
 
 const search = ref('')
 const sortBy = ref([])
@@ -61,11 +62,22 @@ const headers = [
   }
 ]
 
+const filteredData = computed(()=> {
+  if(!store.arrondissement || store.arrondissement === 'ALL'){
+    return data.value;
+  }
+  return data.value.filter(item =>{
+    const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
+    const selectedArr = store.arrondissement.trim().toLowerCase();
+    return itemArr === selectedArr;
+});
+});
+
 const sortedData = computed(() => {
-  if (!sortBy.value.length) return data.value;
+  if (!sortBy.value.length) return filteredData.value;
   
   const key = sortBy.value[0];
-  return [...data.value].sort((a, b) => {
+  return [...filteredData.value].sort((a, b) => {
     const aValue = a[key];
     const bValue = b[key];
     
@@ -85,7 +97,6 @@ onMounted(async () => {
       header: true,
       complete: (results) => {
         data.value = results.data;
-        console.log('Données chargées:', data.value);
       }
     });
   } catch (error) {
@@ -94,8 +105,6 @@ onMounted(async () => {
 });
 
 const openMap = (item) => {
-  console.log('Item received in openMap:', item);
-  
   let latitude = null;
   let longitude = null;
 
@@ -112,7 +121,6 @@ const openMap = (item) => {
   }
 
   if (latitude && longitude) {
-    console.log('Opening map with coordinates:', latitude, longitude);
     const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
     window.open(url, '_blank');
   } else {
@@ -126,7 +134,7 @@ const openMap = (item) => {
 <template>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
-    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="height: fit-content; background-color: #C5E1A5;">
+    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: #C5E1A5;">
       <div>
         <Search 
           v-model="search" 
@@ -136,7 +144,7 @@ const openMap = (item) => {
       </div>
     </v-card>  
     
-    <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1;">
+    <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table
         v-model:search="search"
         :headers="headers"
