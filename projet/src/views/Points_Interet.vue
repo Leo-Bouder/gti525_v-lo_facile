@@ -1,16 +1,17 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import Papa from 'papaparse';
-import csvUrl from '../data/compteurs.csv?url';
+import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
+
 const search = ref('')
 const sortBy = ref([])
 const sortDesc = ref(false)
 const data = ref([])
 
 const headers = [
-  {
+    {
     title: 'ID',
     text: 'ID',
     key: 'ID',
@@ -18,23 +19,37 @@ const headers = [
     sortable: true,
   },
   {
+    title: 'Arrondissement',
+    text: 'Arrondissement',
+    key: 'Arrondissement',
+    align: 'start',
+    sortable: true,
+  },
+  {
+    title: 'Type',
+    text: 'Type',
+    key: 'Type',
+    align: 'start',
+    sortable: true,
+  },
+  {
     title: 'Nom',
     text: 'Nom',
-    key: 'Nom',
+    key: 'Nom_parc_lieu',
     align: 'start',
     sortable: true,
   },
   {
-    title: 'Statut',
-    text: 'Statut',
-    key: 'Statut',
+    title: 'Remarque',
+    text: 'Remarque',
+    key: 'Remarque',
     align: 'start',
     sortable: true,
   },
   {
-    title: 'Année Implantation',
-    text: 'Année Implantation',
-    key: 'Annee_implante',
+    title: 'Adresse',
+    text: 'Adresse',
+    key: 'Adresse',
     align: 'start',
     sortable: true,
   },
@@ -47,19 +62,16 @@ const headers = [
   }
 ]
 
-const filteredData =computed(() => {
+const filteredData = computed(()=> {
+  if(!store.arrondissement || store.arrondissement === 'ALL'){
+    return data.value;
+  }
   return data.value.filter(item =>{
     const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
     const selectedArr = store.arrondissement.trim().toLowerCase();
-    const matchesArr = !selectedArr || selectedArr === 'all' || itemArr === selectedArr;
-
-    const year = parseInt(item.Annee_implante, 10);
-    const matchesYear = !store.year || (!isNaN(year) && year >= parseInt(store.year, 10));
-
-    return matchesArr && matchesYear;
-  });
+    return itemArr === selectedArr;
 });
-
+});
 
 const sortedData = computed(() => {
   if (!sortBy.value.length) return filteredData.value;
@@ -121,18 +133,23 @@ const openMap = (item) => {
 
 <template>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
-    <h2 class="ml-4 pb-4" style="text-align: left;">Statistiques</h2>
+    <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
     <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
       <div>
-        <Search v-model="search" :items="data" :display-fields="['ID', 'Nom', 'Statut', 'Annee_implante']"/>
+        <Search 
+          v-model="search" 
+          :items="data" 
+          :display-fields="['ID', 'Arrondissement', 'Nom_parc_lieu']"
+        />
       </div>
-    </v-card>
-
+    </v-card>  
+    
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table
         v-model:search="search"
         :headers="headers"
         :items="sortedData"
+        :items-per-page="20"
         class="elevation-2 rounded-lg bg-light-green-lighten-5"
         density="comfortable"
         hover

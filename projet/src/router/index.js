@@ -5,7 +5,7 @@ import Statistiques from '../views/Statistiques.vue'
 import Connexion from '../views/Connexion.vue'
 import Inscription from '../views/Inscription.vue'
 import Savoir from '../views/Savoir.vue'
-
+import Interet from '../views/Points_Interet.vue'
 const routes = [
   { path: '/', name: 'Home', component: Home },
   { path: '/reseau', name: 'Reseau', component: Reseau },
@@ -13,6 +13,7 @@ const routes = [
   { path: '/connexion', name: 'Connexion', component: Connexion },
   { path: '/inscription', name: 'Inscription', component: Inscription },
   { path: '/savoir', name: 'Savoir', component: Savoir },
+  { path: '/interet', name: 'Interet', component: Interet },
 ]
 
 const router = createRouter({
