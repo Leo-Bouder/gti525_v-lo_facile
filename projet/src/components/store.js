@@ -4,5 +4,8 @@ export const store = reactive({
   year: "",
   type: "",
   geojsonReseau: null,
-  arrondissement: ""
+  arrondissement: "",
+  protectedLane: true,
+  sharedLane: true,
+  networkType: 'saisonnier'
 })
