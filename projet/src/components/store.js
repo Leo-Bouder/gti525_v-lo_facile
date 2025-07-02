@@ -4,5 +4,6 @@ export const store = reactive({
   year: "",
   type: "",
   geojsonReseau: null,
-  arrondissement: ""
+  arrondissement: "",
+  passageCsvs: []
 })

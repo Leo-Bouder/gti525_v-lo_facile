@@ -4,11 +4,15 @@ import Papa from 'papaparse';
 import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
+import Modal from '../components/Modal.vue';
+import MapContainer from '../components/MapContainer.vue';
 
 const search = ref('')
 const sortBy = ref([])
 const sortDesc = ref(false)
 const data = ref([])
+const selectedId = ref(null)
+const showModal = ref(false)
 
 const headers = [
     {
@@ -62,6 +66,10 @@ const headers = [
   }
 ]
 
+const toggleModal = () => {
+  showModal.value = !showModal.value;
+}
+
 const filteredData = computed(()=> {
   if(!store.arrondissement || store.arrondissement === 'ALL'){
     return data.value;
@@ -105,33 +113,14 @@ onMounted(async () => {
 });
 
 const openMap = (item) => {
-  let latitude = null;
-  let longitude = null;
-
-  if (item && item.raw) {
-    // Try accessing from item.raw first
-    latitude = item.raw.Latitude;
-    longitude = item.raw.Longitude;
-  }
-  
-  // If not found in item.raw, try accessing directly from item (for cases where raw might be undefined)
-  if ((latitude === null || longitude === null) && item) {
-      latitude = item.Latitude;
-      longitude = item.Longitude;
-  }
-
-  if (latitude && longitude) {
-    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-    window.open(url, '_blank');
-  } else {
-    console.warn('Coordonnées de localisation manquantes ou invalides pour cet élément', item);
-    alert('Localisation non disponible pour cet élément.');
-  }
+  selectedId.value = item.ID;
+  toggleModal();
 };
 
 </script>
 
 <template>
+  <Modal title="Capteurs" :show="showModal" @close="toggleModal"><MapContainer :records="data" :selectedId="selectedId"></MapContainer></Modal>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
     <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
