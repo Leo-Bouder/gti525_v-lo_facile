@@ -1,12 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import Papa from 'papaparse';
-import csvUrl from '../data/compteurs.csv?url';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
 import Modal from '../components/Modal.vue';
 import MapContainer from '../components/MapContainer.vue';
 import Graph from '../components/Graph.vue'
+import axios from 'axios';
 
 const search = ref('')
 const sortBy = ref([])
@@ -94,15 +93,7 @@ const sortedData = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await fetch(csvUrl);
-    const csvText = await response.text();
-    
-    Papa.parse(csvText, {
-      header: true,
-      complete: (results) => {
-        data.value = results.data;
-      }
-    });
+    data.value = (await axios.get(`http://localhost:8000/gti525/v1/compteurs`)).data;
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
   }

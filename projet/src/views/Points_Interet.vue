@@ -1,11 +1,10 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import Papa from 'papaparse';
-import csvUrl from '../data/fontaines.csv?url';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
 import Modal from '../components/Modal.vue';
 import MapContainer from '../components/MapContainer.vue';
+import axios from 'axios';
 
 const search = ref('')
 const sortBy = ref([])
@@ -98,15 +97,7 @@ const sortedData = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await fetch(csvUrl);
-    const csvText = await response.text();
-    
-    Papa.parse(csvText, {
-      header: true,
-      complete: (results) => {
-        data.value = results.data;
-      }
-    });
+    data.value = (await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret`)).data;
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
   }
@@ -120,7 +111,7 @@ const openMap = (item) => {
 </script>
 
 <template>
-  <Modal title="Capteurs" :show="showModal" @close="toggleModal"><MapContainer :records="data" :selectedId="selectedId"></MapContainer></Modal>
+  <Modal title="Capteurs" :show="showModal" @close="toggleModal"><MapContainer :records="filteredData" :selectedId="selectedId"></MapContainer></Modal>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
     <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">

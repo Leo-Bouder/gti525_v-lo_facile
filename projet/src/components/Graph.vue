@@ -4,36 +4,33 @@
 
     <div class="status-section">
       <p v-if="loading" class="message">Loading CSV data...</p>
-      <p v-if="!loading && rawCsvData.length === 0" class="message">
-        Pas de données valides
-      </p>
     </div>
 
-    <div v-if="rawCsvData.length > 0 && !loading" class="graph-controls">
+    <div v-if="!loading" class="graph-controls">
       <div class="date-selector">
         <label for="startDate">From:</label>
-        <input type="date" id="startDate" v-model="startDate" @change="updateChart" />
+        <input type="date" id="startDate" v-model="startDate" @change="updateChart(true)" />
 
         <label for="endDate">To:</label>
-        <input type="date" id="endDate" v-model="endDate" @change="updateChart" />
+        <input type="date" id="endDate" v-model="endDate" @change="updateChart(true)" />
       </div>
 
       <div class="interval-selector">
         <label>
-          <input type="radio" v-model="interval" value="day" @change="updateChart" /> Day
+          <input type="radio" v-model="interval" value="day" @change="updateChart(false)" /> Day
         </label>
         <label>
-          <input type="radio" v-model="interval" value="week" @change="updateChart" /> Week
+          <input type="radio" v-model="interval" value="week" @change="updateChart(false)" /> Week
         </label>
         <label>
-          <input type="radio" v-model="interval" value="month" @change="updateChart" /> Month
+          <input type="radio" v-model="interval" value="month" @change="updateChart(false)" /> Month
         </label>
       </div>
     </div>
 
     <div class="graph-wrapper">
       <Bar :data="chartData" :options="chartOptions" v-if="chartData" />
-      <p v-else-if="rawCsvData.length > 0 && !loading" class="message">
+      <p v-else-if="!loading" class="message">
         Aucune donnée disponible pour l'interval donné
       </p>
     </div>
@@ -45,11 +42,8 @@ import Papa from 'papaparse';
 import { Bar } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 import moment from 'moment';
+import axios from 'axios';
 
-import csv2022Url from '../data/comptage_velo_2022.csv?url';
-import csv2023Url from '../data/comptage_velo_2023.csv?url';
-import csv2024Url from '../data/comptage_velo_2024.csv?url';
-import csv2025Url from '../data/comptage_velo_2025.csv?url';
 import { store } from '../components/store';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
@@ -67,13 +61,7 @@ export default {
   },
   data() {
     return {
-      internalCsvUrls: [
-        csv2022Url,
-        csv2023Url,
-        csv2024Url,
-        csv2025Url,
-      ],
-      rawCsvData: [],
+      filteredData: [],
       loading: false,
       error: null,
       startDate: null,
@@ -131,110 +119,20 @@ export default {
       },
     };
   },
-  watch: {
-    rawCsvData: {
-      immediate: false,
-      handler(newVal) {
-        if (newVal && newVal.length > 0) {
-          this.setInitialDates();
-          this.updateChart();
-        } else {
-          this.chartData = null;
-        }
-      },
-    },
-  },
   methods: {
-    async loadAllCsvData() {
-      if(store.passageCsvs.length > 0) {
-        this.rawCsvData = store.passageCsvs;
-        return;
-      }
-      this.loading = true;
-      this.rawCsvData = [];
-
-      if (!this.internalCsvUrls || this.internalCsvUrls.length === 0) {
-        this.loading = false;
-        return;
-      }
-
-      try {
-        const fetchPromises = this.internalCsvUrls.map(url => fetch(url).then(res => {
-            return res.text();
-        }));
-
-        const csvTexts = await Promise.all(fetchPromises);
-        let combinedData = [];
-        let parsingErrors = [];
-
-        csvTexts.forEach((csvText, index) => {
-          Papa.parse(csvText, {
-            header: true,
-            dynamicTyping: false,
-            skipEmptyLines: true,
-            worker: true,
-            complete: (results) => {
-              if (results.errors.length) {
-                results.errors.forEach(err => parsingErrors.push(`CSV ${this.internalCsvUrls[index]}: ${err.message}`));
-              }
-              const parsedBatch = results.data.filter(row =>
-                row.date_heure &&
-                row.nb_passages !== undefined && row.nb_passages !== null &&
-                !isNaN(parseInt(row.nb_passages, 10))
-              ).map(row => ({
-                  date_heure: moment(String(row.date_heure)).valueOf(),
-                  id_compteur: String(row.id_compteur),
-                  nb_passages: parseInt(row.nb_passages, 10)
-              }));
-              combinedData = combinedData.concat(parsedBatch);
-            },
-            error: (err) => {
-              console.log(`PapaParse error for CSV ${this.internalCsvUrls[index]}: ${err.message}`);
-            }
-          });
-        });
-
-        this.rawCsvData = combinedData;
-        store.passageCsvs = combinedData;
-      } catch (err) {
-        this.error = 'Failed to load CSV files: ' + err.message;
-        this.rawCsvData = [];
-      } finally {
-        this.loading = false;
-      }
-    },
-
     setInitialDates() {
-      this.endDate = "2022-01-01";
-      this.startDate = "2022-01-31";
+      this.endDate = "2022-01-31";
+      this.startDate = "2022-01-01";
     },
 
-    updateChart() {
-      if (!this.rawCsvData || this.rawCsvData.length === 0 || !this.startDate || !this.endDate) {
-        this.chartData = null;
-        return;
+    async updateChart(refreshData) {
+      if(refreshData || !this.filteredData) {
+        this.filteredData = await axios.get(`http://localhost:8000/gti525/v1/compteurs/${this.selectedId}?debut=${this.startDate}&fin=${this.endDate}`);
       }
 
-      const startMoment = moment(this.startDate).startOf('day').valueOf();
-      const endMoment = moment(this.endDate).endOf('day').valueOf();
+      const aggregatedData = [];
 
-      const filteredData = this.rawCsvData.filter(item => {
-        const itemDate = moment(item.date_heure);
-        const dateFilter = itemDate >= startMoment && itemDate <= startMoment;
-
-        const matchesId = String(item.id_compteur) === this.selectedId;
-
-        return dateFilter && matchesId;
-      });
-
-      if (filteredData.length === 0) {
-        this.chartData = null;
-        return;
-      }
-
-      const aggregatedData = {};
-
-      filteredData.forEach(item => {
+      this.filteredData.data.forEach(item => {
         const itemDate = moment(item.date_heure);
         let key;
 
@@ -282,10 +180,8 @@ export default {
     },
   },
   mounted() {
-    // Call loadAllCsvData when the component is mounted
-    this.loadAllCsvData();
     this.setInitialDates();
-    this.updateChart();
+    this.updateChart(true);
   }
 };
 </script>
@@ -293,12 +189,8 @@ export default {
 <style scoped>
 .graph-container {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  max-width: 900px;
-  margin: 30px auto;
   padding: 25px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background-color: var(--background-color);
   text-align: center;
 }
 
@@ -370,7 +262,7 @@ input[type="date"]:focus {
 
 .graph-wrapper {
   position: relative;
-  height: 400px;
+  height: 50vh;
   width: 100%;
   background-color: #fff;
   border-radius: 8px;

@@ -84,10 +84,10 @@
 <script>
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import data from "../data/reseau_cyclable.geojson?raw"
 import { store } from '../components/store';
 import { nextTick } from 'vue';
 import Modal from '../components/Modal.vue';
+import axios from 'axios';
 
 export default {
   name: 'Reseau',
@@ -118,7 +118,7 @@ export default {
       try {
         this.loading = true
 
-        this.geojsonData = JSON.parse(data)
+        this.geojsonData = (await axios.get(`http://localhost:8000/gti525/v1/pistes`)).data;
 
         if (this.map && this.geojsonData) {
           this.addGeoJsonLayer(this.geojsonData)

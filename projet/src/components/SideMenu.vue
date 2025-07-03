@@ -104,10 +104,10 @@
 <script>
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import data from "../data/territoires.geojson?raw"
 import DropDown from './DropDown.vue'
 import { VDateInput } from 'vuetify/labs/VDateInput'
 import { store } from './store'
+import axios from 'axios'
 export default {
   name: 'SideMenu',
   components: {
@@ -158,7 +158,7 @@ export default {
       try {
         this.loading = true
 
-        this.geojsonData = JSON.parse(data)
+        this.geojsonData = (await axios.get(`http://localhost:8000/gti525/v1/territoiresGeo`)).data;
 
         const temp_terr = this.geojsonData.features.map(f => ({text:f.properties.NOM, value:f.properties.NOM}));
 
@@ -226,8 +226,8 @@ export default {
           })
           
           layer.on('click', () => {
-            this.setLayer(layer)
             this.selectedTerr = feature.properties.NOM
+            this.dropDownChanged(feature.properties.NOM)
           })
         }
       }).addTo(this.map)
