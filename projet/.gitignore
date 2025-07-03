@@ -23,4 +23,4 @@ dist-ssr
 *.sln
 *.sw?
 /projet/server/data/comptage_velo.db
-
+package-lock.json

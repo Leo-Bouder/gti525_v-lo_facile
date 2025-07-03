@@ -1,13 +1,20 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import Papa from 'papaparse';
-import csvUrl from '../data/compteurs.csv?url';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
+import Modal from '../components/Modal.vue';
+import MapContainer from '../components/MapContainer.vue';
+import Graph from '../components/Graph.vue'
+import axios from 'axios';
+
 const search = ref('')
 const sortBy = ref([])
 const sortDesc = ref(false)
 const data = ref([])
+const selectedId = ref(null)
+const showModalMap = ref(false)
+const showModalGraph = ref(false)
+const currentItem = ref(null);
 
 const headers = [
   {
@@ -39,13 +46,21 @@ const headers = [
     sortable: true,
   },
   {
-    title: 'Carte',
-    text: 'Carte',
-    key: 'map',
+    title: 'Actions',
+    text: 'Actions',
+    key: 'actions',
     align: 'center',
     sortable: false,
   }
 ]
+
+const toggleModalMap = () => {
+  showModalMap.value = !showModalMap.value;
+}
+
+const toggleModalGraph = () => {
+  showModalGraph.value = !showModalGraph.value;
+}
 
 const filteredData =computed(() => {
   return data.value.filter(item =>{
@@ -78,48 +93,29 @@ const sortedData = computed(() => {
 
 onMounted(async () => {
   try {
-    const response = await fetch(csvUrl);
-    const csvText = await response.text();
-    
-    Papa.parse(csvText, {
-      header: true,
-      complete: (results) => {
-        data.value = results.data;
-      }
-    });
+    data.value = (await axios.get(`http://localhost:8000/gti525/v1/compteurs`)).data;
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
   }
 });
 
 const openMap = (item) => {
-  let latitude = null;
-  let longitude = null;
+  selectedId.value = item.ID;
+  currentItem.value = item;
+  toggleModalMap();
+};
 
-  if (item && item.raw) {
-    // Try accessing from item.raw first
-    latitude = item.raw.Latitude;
-    longitude = item.raw.Longitude;
-  }
-  
-  // If not found in item.raw, try accessing directly from item (for cases where raw might be undefined)
-  if ((latitude === null || longitude === null) && item) {
-      latitude = item.Latitude;
-      longitude = item.Longitude;
-  }
-
-  if (latitude && longitude) {
-    const url = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
-    window.open(url, '_blank');
-  } else {
-    console.warn('Coordonnées de localisation manquantes ou invalides pour cet élément', item);
-    alert('Localisation non disponible pour cet élément.');
-  }
+const openChart = (item) => {
+  selectedId.value = item.ID;
+  currentItem.value = item;
+  toggleModalGraph();
 };
 
 </script>
 
 <template>
+  <Modal title="Capteurs" :show="showModalMap" @close="toggleModalMap"><MapContainer :records="data" :selectedId="selectedId"></MapContainer></Modal>
+  <Modal :title="'Statistiques de passages: ' + currentItem?.Nom" :show="showModalGraph" @close="toggleModalGraph"><Graph :selectedId="selectedId"></Graph></Modal>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Statistiques</h2>
     <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
@@ -161,7 +157,15 @@ const openMap = (item) => {
             </th>
           </tr>
         </template>
-        <template #[`item.map`]="{ item }">
+        <template #[`item.actions`]="{ item }">
+          <v-icon
+            size="small"
+            @click="openChart(item)"
+            color="var(--accent-color)"
+            style="margin-right: 5px;"
+          >
+            mdi-chart-bar
+          </v-icon>
           <v-icon
             size="small"
             @click="openMap(item)"

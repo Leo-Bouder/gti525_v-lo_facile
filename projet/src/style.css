@@ -9,6 +9,8 @@
 
   --primary-main: #C5E1A5;
   --accent-color: #4CAF50;
+  --hover-accent: #409044;
+  --background-color: #F5FDE7;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -86,7 +88,7 @@ body,
 .v-application,
 .v-app,
 .v-main {
-  background: #F5FDE7 !important;
+  background: var(--background-color) !important;
   min-height: 100vh;
   margin: 0;
   padding: 0;
