@@ -197,8 +197,12 @@ export default {
         }
         return acc;
       }, 0) / 1000;
-      if (this.map && this.filteredGeoJsonData) {
+      if (this.map && filteredFeatures.length > 0 && this.filteredGeoJsonData) {
         this.addGeoJsonLayer(this.filteredGeoJsonData);
+      }
+      else if(filteredFeatures.length === 0) {
+        this.map.removeLayer(this.geojsonLayer)
+        this.map.setView([45.5017,-73.6973], 11);
       }
     },
     initMap() {
@@ -236,8 +240,6 @@ export default {
           else if (cat === 'Voie partagée') color = '#84CA4B'; // vert
           else if (cat === 'Voie protégée') color = '#025D29'; // rouge
           else if (cat === 'Sentier polyvalent') color = '#B958D9'; // jaune
-          // Pour debug :
-          console.log(cat, feature);
           return {
             color: color,
             weight: 2,
