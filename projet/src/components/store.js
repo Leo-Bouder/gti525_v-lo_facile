@@ -5,5 +5,8 @@ export const store = reactive({
   type: "",
   geojsonReseau: null,
   arrondissement: "",
-  passageCsvs: []
+  passageCsvs: [],
+  protectedLane: true,
+  sharedLane: true,
+  networkType: 'saisonnier'
 })

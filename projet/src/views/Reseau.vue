@@ -73,8 +73,8 @@
         </v-card-title>
         <v-card-text class="pa-0 pl-4">
           <div class="mb-3">
-            <p>Nombre de pistes : X</p>
-            <p>Nombre de Km : Y</p>
+            <p>Nombre de pistes : {{ nombrePistes }}</p>
+            <p>Nombre de Km : {{ longueurTotaleKm.toFixed(2) }}</p>
           </div>
         </v-card-text>
       </v-card>
@@ -85,6 +85,7 @@
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { store } from '../components/store';
+import { nextTick, watch } from 'vue';
 import { nextTick } from 'vue';
 import Modal from '../components/Modal.vue';
 import axios from 'axios';
@@ -104,6 +105,9 @@ export default {
       },
       selectedTerr: "",
       currentLayer: null,
+      nombrePistes: 0,
+      longueurTotaleKm: 0,
+      filteredGeoJsonData: null,
       showInfoModal: false
     }
   },
@@ -112,6 +116,19 @@ export default {
     requestIdleCallback(() => {
       this.initMap()
     })
+    // Watch sur le store pour la sélection d'arrondissement et les cases à cocher
+    watch(() => store.arrondissement, () => {
+      this.updateStatsAndLayer();
+    });
+    watch(() => store.protectedLane, () => {
+      this.updateStatsAndLayer();
+    });
+    watch(() => store.sharedLane, () => {
+      this.updateStatsAndLayer();
+    });
+    watch(() => store.networkType, () => {
+      this.updateStatsAndLayer();
+    });
   },
   methods: {
     async loadGeoJsonData() {
@@ -120,11 +137,69 @@ export default {
 
         this.geojsonData = (await axios.get(`http://localhost:8000/gti525/v1/pistes`)).data;
 
+        // Calcul initial (tous quartiers)
+        this.updateStatsAndLayer();
+
         if (this.map && this.geojsonData) {
-          this.addGeoJsonLayer(this.geojsonData)
+          this.addGeoJsonLayer(this.filteredGeoJsonData)
         }
       } catch (error) {
         console.error('Error loading GeoJSON data:', error)
+      }
+    },
+    updateStatsAndLayer() {
+      let filteredFeatures = this.geojsonData.features;
+
+      // Filtre arrondissement
+      if (store.arrondissement && store.arrondissement !== 'ALL') {
+        filteredFeatures = filteredFeatures.filter(f =>
+          f.properties &&
+          (f.properties.Arrondissement === store.arrondissement ||
+           f.properties.NOM_ARR_VILLE_DESC === store.arrondissement)
+        );
+      }
+
+      // Filtre type de voie
+      const protCodes = [4, 5, 6, 7];
+      const sharedCodes = [1, 3, 8, 9];
+      if (!store.protectedLane && !store.sharedLane) {
+        filteredFeatures = [];
+      } else if (store.protectedLane !== store.sharedLane) {
+        if (store.protectedLane) {
+          filteredFeatures = filteredFeatures.filter(f => protCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
+        } else if (store.sharedLane) {
+          filteredFeatures = filteredFeatures.filter(f => sharedCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
+        }
+      }
+      // Sinon (les deux cochées) : on garde tout
+
+      // Filtre saison
+      console.log('networkType:', store.networkType);
+      console.log('Avant filtre saison:', filteredFeatures.length);
+      if (store.networkType === '4saisons') {
+        filteredFeatures = filteredFeatures.filter(f =>
+          f.properties &&
+          typeof f.properties.SAISONS4 !== 'undefined' &&
+          String(f.properties.SAISONS4).toLowerCase() === 'oui'
+        );
+      }
+      console.log('Après filtre saison:', filteredFeatures.length);
+
+      this.filteredGeoJsonData = {
+        ...this.geojsonData,
+        features: filteredFeatures
+      };
+      this.nombrePistes = filteredFeatures.length;
+      this.longueurTotaleKm = filteredFeatures.reduce((acc, feature) => {
+        if (feature.geometry.type === 'LineString') {
+          return acc + this.getLineLength(feature.geometry.coordinates);
+        } else if (feature.geometry.type === 'MultiLineString') {
+          return acc + feature.geometry.coordinates.reduce((acc2, coords) => acc2 + this.getLineLength(coords), 0);
+        }
+        return acc;
+      }, 0) / 1000;
+      if (this.map && this.filteredGeoJsonData) {
+        this.addGeoJsonLayer(this.filteredGeoJsonData);
       }
     },
     initMap() {
@@ -144,12 +219,8 @@ export default {
         maxZoom: 50
       }).addTo(this.map)
 
-      if (store.geojsonReseau) {
-        this.addGeoJsonLayer(this.geojsonData)
-      }
-      else {
-        this.loadGeoJsonData()
-      }
+      // Toujours charger les données et calculer les stats
+      this.loadGeoJsonData()
       this.loading = false
     },
 
@@ -157,26 +228,44 @@ export default {
       if (this.geojsonLayer) {
         this.map.removeLayer(this.geojsonLayer)
       }
-      if (store.geojsonReseau) {
-        store.geojsonReseau.addTo(this.map)
-        this.geojsonLayer = store.geojsonReseau
-      }
-      else {
-        this.geojsonLayer = L.geoJSON(geojsonData, {
-          style: (feature) => ({
-            fillColor: '#e0e0e0',
-            weight: 1,
-            opacity: 1,
-            color: '#666',
-            fillOpacity: 0.3
-          })
-        })
-        store.geojsonReseau = this.geojsonLayer;
-        this.geojsonLayer.addTo(this.map);
-      }
+      // Toujours créer une nouvelle couche avec le style dynamique
+      this.geojsonLayer = L.geoJSON(geojsonData, {
+        style: (feature) => {
+          const cat = this.getCategorie(feature);
+          let color = '#000'; // noir par défaut pour bien voir
+          if (cat === 'REV') color = '#2AC7DD'; // bleu
+          else if (cat === 'Voie partagée') color = '#84CA4B'; // vert
+          else if (cat === 'Voie protégée') color = '#025D29'; // rouge
+          else if (cat === 'Sentier polyvalent') color = '#B958D9'; // jaune
+          // Pour debug :
+          console.log(cat, feature);
+          return {
+            color: color,
+            weight: 2,
+            opacity: 1
+          }
+        }
+      })
+      this.geojsonLayer.addTo(this.map);
       this.map.fitBounds(this.geojsonLayer.getBounds(), { padding: [10, 10] })
     },
-
+    getCategorie(feature) {
+      const p = feature.properties;
+      // Le REV
+      if (["EV", "PE", "TR"].includes(p.REV_AVANCEMENT_CODE)) return "REV";
+      // Voie partagée
+      if (p.AVANCEMENT_CODE === "E" && [1, 3, 8, 9].includes(Number(p.TYPE_VOIE_CODE))) return "Voie partagée";
+      // Voie protégée
+      if (
+        p.AVANCEMENT_CODE === "E" &&
+        [4, 5, 6].includes(Number(p.TYPE_VOIE_CODE)) &&
+        !["EV", "PE", "TR"].includes(p.REV_AVANCEMENT_CODE)
+      ) return "Voie protégée";
+      // Sentier polyvalent
+      if (p.AVANCEMENT_CODE === "E" && Number(p.TYPE_VOIE_CODE) === 7) return "Sentier polyvalent";
+      // Par défaut
+      return "Autre";
+    },
     zoomIn() {
       if (this.map) {
         this.map.zoomIn()
@@ -187,6 +276,28 @@ export default {
       if (this.map) {
         this.map.zoomOut()
       }
+    },
+    getLineLength(coords) {
+      // Calcule la longueur d'une LineString en mètres
+      let total = 0;
+      for (let i = 1; i < coords.length; i++) {
+        total += this.getDistance(coords[i - 1], coords[i]);
+      }
+      return total;
+    },
+    getDistance(coord1, coord2) {
+      // Haversine formula
+      const R = 6371000; // rayon de la Terre en mètres
+      const toRad = (x) => x * Math.PI / 180;
+      const [lon1, lat1] = coord1;
+      const [lon2, lat2] = coord2;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
     },
 
     toggleModalInfo() {

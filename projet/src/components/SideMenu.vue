@@ -127,11 +127,24 @@ export default {
       selectedTerr: "",
       currentLayer: null,
       year: "",
-
       typeItems:[
       { text: "Fontaine à boire", value: "Fontaine à boire" },
       { text: "Atelier réparation", value: "Atelier réparation" }
       ]
+    }
+  },
+  computed: {
+    protectedLane: {
+      get() { return this.$store ? this.$store.protectedLane : store.protectedLane },
+      set(val) { store.protectedLane = val }
+    },
+    sharedLane: {
+      get() { return this.$store ? this.$store.sharedLane : store.sharedLane },
+      set(val) { store.sharedLane = val }
+    },
+    networkType: {
+      get() { return store.networkType },
+      set(val) { store.networkType = val }
     }
   },
   mounted() {
