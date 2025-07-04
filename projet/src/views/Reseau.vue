@@ -86,7 +86,6 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { store } from '../components/store';
 import { nextTick, watch } from 'vue';
-import { nextTick } from 'vue';
 import Modal from '../components/Modal.vue';
 import axios from 'axios';
 
