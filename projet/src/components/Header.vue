@@ -1,4 +1,17 @@
 <script setup>
+import { onMounted } from 'vue';
+import { store } from './store';
+
+const signout = () => {
+  localStorage.removeItem('token');
+  store.token = undefined;
+}
+
+onMounted(() => {
+  if(localStorage.getItem("token")) {
+    store.token = localStorage.getItem("token")
+  }
+})
 </script>
 
 <template>
@@ -22,12 +35,19 @@
     <v-btn class="pr-3" text to="/interet" tag="router-link">
       Points d'intérêt
     </v-btn>
-    <v-btn text to="/connexion" tag="router-link">
-      Se connecter
-    </v-btn>
-    <v-btn class="pr-3" text to="/inscription" tag="router-link">
-      S'inscrire
-    </v-btn>
+    <div v-if="!store.token">
+      <v-btn text to="/connexion" tag="router-link">
+        Se connecter
+      </v-btn>
+      <v-btn class="pr-3" text to="/inscription" tag="router-link">
+        S'inscrire
+      </v-btn>
+    </div>
+    <div v-else>
+      <v-btn text @click="signout">
+        Déconnexion
+      </v-btn>
+    </div>
   </v-app-bar>
 </template>
 

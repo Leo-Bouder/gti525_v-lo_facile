@@ -38,13 +38,10 @@
 </template>
 
 <script>
-import Papa from 'papaparse';
 import { Bar } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
 import moment from 'moment';
 import axios from 'axios';
-
-import { store } from '../components/store';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
 
@@ -63,7 +60,6 @@ export default {
     return {
       filteredData: [],
       loading: false,
-      error: null,
       startDate: null,
       endDate: null,
       interval: 'day',
@@ -164,6 +160,8 @@ export default {
 
       const labels = sortedKeys;
       const dataValues = sortedKeys.map(key => aggregatedData[key]);
+      console.log(dataValues);
+      console.log(sortedKeys);
 
       this.chartData = {
         labels: labels,
