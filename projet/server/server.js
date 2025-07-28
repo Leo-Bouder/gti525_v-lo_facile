@@ -103,6 +103,8 @@ app.get('/gti525/v1/territoiresGeo', (req, res)=>{
     });
 });
 
+
+//À TERMINER
 app.get('/gti525/v1/', (req, res) => {
   res.json({
     message: 'Available API endpoints',

@@ -160,8 +160,6 @@ export default {
 
       const labels = sortedKeys;
       const dataValues = sortedKeys.map(key => aggregatedData[key]);
-      console.log(dataValues);
-      console.log(sortedKeys);
 
       this.chartData = {
         labels: labels,

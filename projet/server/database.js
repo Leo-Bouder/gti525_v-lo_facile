@@ -62,7 +62,6 @@ db.serialize(() => {
         });
     }
 
-    // Create the compteurs table if it doesn't exist and import data
     db.run(`
         CREATE TABLE IF NOT EXISTS compteurs (
           ID INTEGER PRIMARY KEY,
