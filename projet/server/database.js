@@ -97,6 +97,7 @@ db.serialize(() => {
         CREATE TABLE IF NOT EXISTS points_interets (
           ID INTEGER PRIMARY KEY,
           Arrondissement TEXT,
+          Type TEXT,
           Nom_parc_lieu TEXT,
           Proximite_jeux_repere TEXT,
           Intersection TEXT,
@@ -116,7 +117,7 @@ db.serialize(() => {
         }
         console.log('Points_interets table checked/created.');
         const pointsInteretsColumns = [
-            'ID', 'Arrondissement', 'Nom_parc_lieu', 'Proximite_jeux_repere',
+            'ID', 'Arrondissement', 'Type', 'Nom_parc_lieu', 'Proximite_jeux_repere',
             'Intersection', 'Etat', 'Date_installation', 'Remarque',
             'Precision_localisation', 'X', 'Y', 'Longitude', 'Latitude'
         ];
@@ -124,6 +125,7 @@ db.serialize(() => {
         importCsvData('points_interets', pointsInteretsCsvPath, pointsInteretsColumns, (data) => ({
             ID: parseInt(data.ID),
             Arrondissement: data.Arrondissement,
+            Type: "Fontaine",
             Nom_parc_lieu: data.Nom_parc_lieu,
             Proximite_jeux_repere: data['Proximité_jeux_repère'],
             Intersection: data.Intersection,

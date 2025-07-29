@@ -5,7 +5,7 @@ const db = require('../database');
 const router = express.Router();
 
 router.get('/', (req, res) => {
-    const limit = parseInt(req.query.limite) || 10;
+    const limit = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 1;
     const typeSearch = req.query.type;
     const territoireSearch = req.query.territoire;
@@ -16,10 +16,10 @@ router.get('/', (req, res) => {
     let sql = `SELECT * FROM points_interets WHERE 1=1`;
     const params = [];
 
-    // if (typeSearch) {
-    //     sql += ` AND Proximite_jeux_repere LIKE ?`;
-    //     params.push(`%${typeSearch}%`);
-    // }
+    if (typeSearch) {
+        sql += ` AND Type LIKE ?`;
+        params.push(`%${typeSearch}%`);
+    }
 
     if (territoireSearch) {
         sql += ` AND Arrondissement LIKE ?`;
@@ -44,7 +44,7 @@ router.get('/', (req, res) => {
         const countParams = [];
 
         if (typeSearch) {
-            countSql += ` AND Proximite_jeux_repere LIKE ?`;
+            countSql += ` AND Type LIKE ?`;
             countParams.push(`%${typeSearch}%`);
         }
 
@@ -89,15 +89,14 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-    console.log(req.body);
-    const { Arrondissement, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude } = req.body;
+    const { Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude } = req.body;
 
-    if (!Arrondissement || !Nom_parc_lieu || !Proximite_jeux_repere || !Longitude || !Latitude) {
-        return res.status(400).json({ error: 'Missing required fields: Arrondissement, Nom_parc_lieu, Proximite_jeux_repere, Longitude ou Latitude.' });
+    if (!Arrondissement || !Nom_parc_lieu || !Proximite_jeux_repere || !Longitude || !Latitude || !Type) {
+        return res.status(400).json({ error: 'Missing required fields: Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Longitude ou Latitude.' });
     }
 
-    const sql = `INSERT INTO points_interets (Arrondissement, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    const params = [Arrondissement, Nom_parc_lieu, Proximite_jeux_repere, Intersection || null, Etat || null, Date_installation || null, Remarque || null, Precision_localisation || null, X || null, Y || null, Longitude || null, Latitude || null];
+    const sql = `INSERT INTO points_interets (Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const params = [Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Intersection || null, Etat || null, Date_installation || null, Remarque || null, Precision_localisation || null, X || null, Y || null, Longitude || null, Latitude || null];
 
     db.run(sql, params, function(err) {
         if (err) {
