@@ -5,6 +5,8 @@ const db = require('./database');
 const fs = require('fs')
 const csv = require('csv-parser')
 const authRoutes = require('./routes/auth');
+const compteursRoutes = require('./routes/compteurs');
+const poiRoutes = require('./routes/points_interets');
 
 const app = express();
 const PORT = 8000;
@@ -13,6 +15,8 @@ app.use(cors());
 app.use(express.json());
 
 app.use('/gti525/v1/auth', authRoutes);
+app.use('/gti525/v1/compteurs', compteursRoutes);
+app.use('/gti525/v1/pointsdinteret', poiRoutes);
 
 app.get('/gti525/v1/compteurs', (req, res)=>{
     const results = [];
@@ -25,29 +29,6 @@ app.get('/gti525/v1/compteurs', (req, res)=>{
     .on('error', (err)=>{
         console.error('Erreur lors de la lecture du csv compteurs', err);
         res.status(500).json({error: 'Erreur serveur'});
-    });
-});
-
-app.get('/gti525/v1/compteurs/:id', (req,res)=>{
-    const compteurId = req.params.id;
-    const debut = req.query.debut;
-    const fin = req.query.fin;
-    
-    let query = `SELECT * FROM comptage_velo WHERE id_compteur = ?`;
-    let params = [compteurId];
-
-    if(debut && fin){
-        query += ` AND date_heure BETWEEN ? AND ?`;
-        params.push(debut, fin);
-    }
-
-    db.all(query, params, (err, rows)=>{
-        if(err){
-            console.error(err);
-            res.status(500).json({error: "Erreur lors de la recupperation des donnees des compteurs"});
-        }else{
-            res.json(rows);
-        }
     });
 });
 
