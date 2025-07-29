@@ -8,5 +8,6 @@ export const store = reactive({
   passageCsvs: [],
   protectedLane: true,
   sharedLane: true,
-  networkType: 'saisonnier'
+  networkType: 'saisonnier',
+  token: undefined
 })
