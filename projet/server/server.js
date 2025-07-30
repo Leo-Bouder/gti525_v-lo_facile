@@ -7,6 +7,8 @@ const csv = require('csv-parser')
 const authRoutes = require('./routes/auth');
 const compteursRoutes = require('./routes/compteurs');
 const poiRoutes = require('./routes/points_interets');
+const pistesRoutes = require('./routes/pistes');
+
 
 const app = express();
 const PORT = 8000;
@@ -17,6 +19,7 @@ app.use(express.json());
 app.use('/gti525/v1/auth', authRoutes);
 app.use('/gti525/v1/compteurs', compteursRoutes);
 app.use('/gti525/v1/pointsdinteret', poiRoutes);
+app.use('/gti525/v1', pistesRoutes);
 
 app.get('/gti525/v1/compteurs', (req, res)=>{
     const results = [];
@@ -29,18 +32,6 @@ app.get('/gti525/v1/compteurs', (req, res)=>{
     .on('error', (err)=>{
         console.error('Erreur lors de la lecture du csv compteurs', err);
         res.status(500).json({error: 'Erreur serveur'});
-    });
-});
-
-app.get('/gti525/v1/pistes', (req, res)=>{
-    const geojsonPath = path.join(__dirname, './data/reseau_cyclable.geojson');
-    fs.readFile(geojsonPath, 'utf8', (err,data)=>{
-        if(err){
-            console.error('Erreur lors de la lecture du fichier reseau_cyclable:', err);
-            return res.status(500).json({error: 'Erreur serveur' });
-        }
-        res.setHeader('Content-Type', 'application/json');
-        res.send(data);
     });
 });
 
