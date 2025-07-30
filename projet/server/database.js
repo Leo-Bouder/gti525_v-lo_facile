@@ -2,6 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
+const { error } = require('console');
 
 const dbPath = path.join(__dirname, 'data', 'comptage_velo.db');
 
@@ -160,6 +161,44 @@ db.serialize(() => {
             mat: data.mat
         }));
     });
-});
+    db.run(`
+        CREATE TABLE IF NOT EXISTS pistes_cyclables(
+        id INTEGER PRIMARY KEY,
+        geojson TEXT
+        )`, (err) =>{
+            if(err){
+                console.error(`Erreur creation table pistes_cyclables:`, err.message);
+            }else{
+                console.log(`Table pistes_cyclables prete.`);
+            }
+            const pistesPath = path.join(__dirname, 'data', 'reseau_cyclable.geojson');
+
+            fs.readFile(pistesPath, 'utf8', (err,data) =>{
+                if(err){
+                    console.error('Erreur lecture reseau_cyclable.geojson:', err.message);
+                    return;
+                }
+                
+                db.get("SELECT COUNT(*) AS count FROM pistes_cyclables", (err, row) =>{
+                    if(err){
+                       console.error('Erreur SELECT COUNT:', err.message);
+                        return;
+                    }
+                    if(row.count === 0){
+                        db.run("INSERT INTO pistes_cyclables (id, geojson) VALUES (?, ?)", [1, data], (err) =>{
+                            if(err){
+                                console.error('Erreur insertion geojson', err.message);
+                            } else{
+                                console.log('GeoJSON pistes insere avec succes');
+                            }
+                        });
+                    } else{
+                        console.log('Insertion ignored: GeoJSON pistes deja present');
+                    }
+                });
+             });
+            
+        });
+    });
 
 module.exports = db;
