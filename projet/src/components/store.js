@@ -9,5 +9,10 @@ export const store = reactive({
   protectedLane: true,
   sharedLane: true,
   networkType: 'saisonnier',
-  token: undefined
+  token: undefined,
+  // Nouvelles propriétés pour les pistes populaires
+  dateFrom: "",
+  dateTo: "",
+  showPopularPistes: false,
+  triggerPopularPistesUpdate: false
 })

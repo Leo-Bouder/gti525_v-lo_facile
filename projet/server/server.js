@@ -35,19 +35,7 @@ app.get('/gti525/v1/compteurs', (req, res)=>{
     });
 });
 
-app.get('/gti525/v1/pointsdinteret', (req, res)=>{
-    const results = [];
-    const csvPath = path.join(__dirname, './data/fontaines.csv');
-    fs.createReadStream(csvPath).pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', ()=>{
-        res.json(results);
-    })
-    .on('error', (err)=>{
-        console.error('Erreur lors de la lecture du csv pointsdinteret', err);
-        res.status(500).json({error: 'Erreur serveur'});
-    });
-});
+
 
 app.get('/gti525/v1/territoires', (req, res)=>{
     const results = [];

@@ -46,6 +46,10 @@ export default {
         selectedId: {
             type: String,
             default: null
+        },
+        selectedArrondissement: {
+            type: String,
+            default: null
         }
     },
     data() {
@@ -72,6 +76,20 @@ export default {
     mounted() {
         if(!this.map) {
             this.initMap()
+        }
+    },
+    watch: {
+        selectedArrondissement() {
+            if (this.map && this.layerGroup) {
+                this.createMarkerLayer();
+                this.setMarker(this.selectedId);
+            }
+        },
+        records() {
+            if (this.map && this.layerGroup) {
+                this.createMarkerLayer();
+                this.setMarker(this.selectedId);
+            }
         }
     },
     beforeUnmount() {
@@ -144,6 +162,12 @@ export default {
                 const lat = record.Latitude;
                 const lng = record.Longitude;
                 const name = record.Nom || (record.Nom_parc_lieu || `Marker ${id}`);
+                const arrondissement = record.Arrondissement;
+
+                // Filtrer par arrondissement si spécifié
+                if (this.selectedArrondissement && arrondissement !== this.selectedArrondissement) {
+                    continue;
+                }
 
                 if (id === undefined || id === null || isNaN(lat) || isNaN(lng)) {
                     continue;
@@ -156,7 +180,16 @@ export default {
                         this.setMarker(e.target.id, true)
                     })
                     
-                    marker.bindPopup(`<b>${name} (ID: ${id})</b>`);
+                    // Popup enrichi avec plus d'informations
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <b>${name}</b><br>
+                            <small>ID: ${id}</small><br>
+                            <small>Arrondissement: ${arrondissement || 'N/A'}</small><br>
+                            <small>Type: ${record.Type || 'N/A'}</small>
+                        </div>
+                    `;
+                    marker.bindPopup(popupContent);
 
                     this.layerGroup.addLayer(marker);
                     this.markerMap.set(String(id), marker);
@@ -168,6 +201,7 @@ export default {
 
             if (markersAdded > 0) {
                 this.layerGroup.addTo(this.map);
+                console.log(`Added ${markersAdded} markers for arrondissement: ${this.selectedArrondissement || 'All'}`);
             } else {
                 console.log('No valid markers were found in the CSV data after parsing.');
             }

@@ -9,6 +9,10 @@ router.get('/', (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const minAnneeImplante = parseInt(req.query.implantation);
     const nomSearch = req.query.nom;
+    const arrondissement = req.query.arrondissement;
+    const statut = req.query.statut;
+    const sortBy = req.query.sortBy || 'ID';
+    const sortOrder = req.query.sortOrder || 'ASC';
 
     const offset = (page - 1) * limit;
 
@@ -26,6 +30,24 @@ router.get('/', (req, res) => {
         params.push(`%${nomSearch}%`);
     }
 
+    if (arrondissement && arrondissement !== 'all') {
+        sql += ` AND Arrondissement = ?`;
+        params.push(arrondissement);
+    }
+
+    if (statut) {
+        sql += ` AND Statut = ?`;
+        params.push(statut);
+    }
+
+    // Validation du tri
+    const allowedSortFields = ['ID', 'Nom', 'Statut', 'Annee_implante', 'Arrondissement'];
+    const allowedSortOrders = ['ASC', 'DESC'];
+    
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'ID';
+    const validSortOrder = allowedSortOrders.includes(sortOrder.toUpperCase()) ? sortOrder.toUpperCase() : 'ASC';
+    
+    sql += ` ORDER BY ${validSortBy} ${validSortOrder}`;
     sql += ` LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
@@ -46,6 +68,16 @@ router.get('/', (req, res) => {
         if (nomSearch) {
             countSql += ` AND Nom LIKE ?`;
             countParams.push(`%${nomSearch}%`);
+        }
+
+        if (arrondissement && arrondissement !== 'all') {
+            countSql += ` AND Arrondissement = ?`;
+            countParams.push(arrondissement);
+        }
+
+        if (statut) {
+            countSql += ` AND Statut = ?`;
+            countParams.push(statut);
         }
 
         db.get(countSql, countParams, (countErr, countRow) => {

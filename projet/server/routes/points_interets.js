@@ -88,6 +88,29 @@ router.get('/', (req, res) => {
     });
 });
 
+router.get('/:id', (req, res) => {
+    const pointId = parseInt(req.params.id);
+
+    if (isNaN(pointId)) {
+        return res.status(400).json({ error: 'Invalid point of interest ID. Must be a number.' });
+    }
+
+    const sql = `SELECT * FROM points_interets WHERE ID = ?`;
+
+    db.get(sql, [pointId], (err, row) => {
+        if (err) {
+            console.error('Error fetching point d\'intérêt:', err.message);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+
+        if (!row) {
+            return res.status(404).json({ error: 'Point of interest not found.' });
+        }
+
+        res.status(200).json(row);
+    });
+});
+
 router.post('/', (req, res) => {
     const { Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude } = req.body;
 

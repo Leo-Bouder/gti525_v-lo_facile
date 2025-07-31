@@ -11,8 +11,6 @@ export default {
       year: ''
     }
   },
-  methods: {
-  },
   props: {
     haveMenu: true
   }
@@ -20,7 +18,7 @@ export default {
 </script>
 
 <template>
-    <div style="display: flex; height: 100%;">
+    <div style="display: flex; height: calc(100vh - 120px);">
         <SideMenu 
             v-if="haveMenu===true"
         />

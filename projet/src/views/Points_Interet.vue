@@ -4,6 +4,8 @@ import Search from '../components/Search.vue';
 import { store } from '../components/store';
 import Modal from '../components/Modal.vue';
 import MapContainer from '../components/MapContainer.vue';
+import PointInteretForm from '../components/PointInteretForm.vue';
+import PointInteretFilters from '../components/PointInteretFilters.vue';
 import axios from 'axios';
 
 const search = ref('')
@@ -12,6 +14,13 @@ const sortDesc = ref(false)
 const data = ref([])
 const selectedId = ref(null)
 const showModal = ref(false)
+const showFormModal = ref(false)
+const editingPoint = ref(null)
+const isEditing = ref(false)
+const filters = ref({
+  arrondissement: '',
+  type: ''
+})
 
 const headers = [
     {
@@ -62,22 +71,66 @@ const headers = [
     key: 'map',
     align: 'center',
     sortable: false,
+  },
+  {
+    title: 'Actions',
+    text: 'Actions',
+    key: 'actions',
+    align: 'center',
+    sortable: false,
   }
 ]
 
 const toggleModal = () => {
   showModal.value = !showModal.value;
+  if (!showModal.value) {
+    // Réinitialiser quand on ferme la carte
+    selectedArrondissementForMap.value = '';
+    selectedId.value = null;
+  }
 }
 
 const filteredData = computed(()=> {
-  if(!store.arrondissement || store.arrondissement === 'ALL'){
-    return data.value;
+  let filtered = data.value;
+  
+  // Filtre par arrondissement (store global)
+  if(store.arrondissement && store.arrondissement !== 'ALL'){
+    filtered = filtered.filter(item =>{
+      const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
+      const selectedArr = store.arrondissement.trim().toLowerCase();
+      return itemArr === selectedArr;
+    });
   }
-  return data.value.filter(item =>{
-    const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
-    const selectedArr = store.arrondissement.trim().toLowerCase();
-    return itemArr === selectedArr;
+  
+  // Filtre par arrondissement (filtres locaux)
+  if(filters.value.arrondissement){
+    filtered = filtered.filter(item =>{
+      const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
+      const selectedArr = filters.value.arrondissement.trim().toLowerCase();
+      return itemArr === selectedArr;
+    });
+  }
+  
+  // Filtre par type
+  if(filters.value.type){
+    filtered = filtered.filter(item =>{
+      const itemType = (item['Type'] || '').trim().toLowerCase();
+      const selectedType = filters.value.type.trim().toLowerCase();
+      return itemType === selectedType;
+    });
+  }
+  
+  return filtered;
 });
+
+// Données spécifiques pour la carte (filtrées par arrondissement du point sélectionné)
+const mapData = computed(() => {
+  if (selectedArrondissementForMap.value) {
+    return data.value.filter(item => 
+      item.Arrondissement === selectedArrondissementForMap.value
+    );
+  }
+  return filteredData.value;
 });
 
 const sortedData = computed(() => {
@@ -97,32 +150,114 @@ const sortedData = computed(() => {
 
 onMounted(async () => {
   try {
-    data.value = (await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret`)).data;
+    const response = await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret?limit=1000`);
+    data.value = response.data.data; // Extraire le tableau de données de la réponse paginée
   } catch (error) {
     console.error('Erreur lors du chargement des données:', error);
   }
 });
 
+const selectedArrondissementForMap = ref('');
+
 const openMap = (item) => {
   selectedId.value = item.ID;
+  selectedArrondissementForMap.value = item.Arrondissement;
   toggleModal();
+};
+
+const openFormModal = (item = null) => {
+  if (item) {
+    editingPoint.value = item;
+    isEditing.value = true;
+  } else {
+    editingPoint.value = null;
+    isEditing.value = false;
+  }
+  showFormModal.value = true;
+};
+
+const closeFormModal = () => {
+  showFormModal.value = false;
+  editingPoint.value = null;
+};
+
+const handleFormSaved = async (savedPoint) => {
+  // Recharger toutes les données pour s'assurer que l'interface est à jour
+  try {
+    const response = await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret?limit=1000`);
+    data.value = response.data.data;
+  } catch (error) {
+    console.error('Erreur lors du rechargement des données:', error);
+  }
+};
+
+const deletePoint = async (item) => {
+  if (confirm('Êtes-vous sûr de vouloir supprimer ce point d\'intérêt ?')) {
+    try {
+      await axios.delete(`http://localhost:8000/gti525/v1/pointsdinteret/${item.ID}`);
+      // Recharger toutes les données pour s'assurer que l'interface est à jour
+      const response = await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret?limit=1000`);
+      data.value = response.data.data;
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Erreur lors de la suppression: ' + (error.response?.data?.error || error.message));
+    }
+  }
+};
+
+const handleFilterChange = (newFilters) => {
+  filters.value = newFilters;
 };
 
 </script>
 
 <template>
-  <Modal title="Capteurs" :show="showModal" @close="toggleModal"><MapContainer :records="filteredData" :selectedId="selectedId"></MapContainer></Modal>
-  <div class="d-flex flex-column pt-4" style="height: 100%;">
-    <h2 class="ml-4 pb-4" style="text-align: left;">Points d'intérêts</h2>
-    <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
-      <div>
-        <Search 
-          v-model="search" 
-          :items="data" 
-          :display-fields="['ID', 'Arrondissement', 'Nom_parc_lieu']"
+  <Modal title="Carte des points d'intérêt" :show="showModal" @close="toggleModal">
+    <MapContainer 
+      :records="mapData" 
+      :selectedId="selectedId"
+      :selected-arrondissement="selectedArrondissementForMap"
+    />
+  </Modal>
+  
+  <PointInteretForm 
+    :show="showFormModal"
+    :point="editingPoint"
+    :is-editing="isEditing"
+    @close="closeFormModal"
+    @saved="handleFormSaved"
+  />
+  
+      <div class="d-flex flex-column pt-4" style="height: 100%;">
+      <div class="d-flex justify-space-between align-center ml-4 pb-4">
+        <h2 style="text-align: left;">Points d'intérêts</h2>
+        <v-btn 
+          color="primary" 
+          prepend-icon="mdi-plus"
+          @click="openFormModal()"
+        >
+          Ajouter un point d'intérêt
+        </v-btn>
+      </div>
+      
+      <!-- Filtres -->
+      <div class="mr-8 mb-4 ml-4">
+        <PointInteretFilters 
+          :data="data"
+          @filter-change="handleFilterChange"
         />
       </div>
-    </v-card>  
+      
+      <!-- Barre de recherche -->
+      <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
+        <div>
+          <Search 
+            v-model="search" 
+            :items="data" 
+            :display-fields="['ID', 'Arrondissement', 'Nom_parc_lieu']"
+          />
+        </div>
+      </v-card>  
     
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table
@@ -166,6 +301,29 @@ const openMap = (item) => {
           >
             mdi-map-marker
           </v-icon>
+        </template>
+        
+        <template #[`item.actions`]="{ item }">
+          <div class="d-flex gap-2">
+            <v-btn
+              size="small"
+              color="primary"
+              variant="outlined"
+              @click="openFormModal(item)"
+              icon
+            >
+              <v-icon size="small">mdi-pencil</v-icon>
+            </v-btn>
+            <v-btn
+              size="small"
+              color="error"
+              variant="outlined"
+              @click="deletePoint(item)"
+              icon
+            >
+              <v-icon size="small">mdi-delete</v-icon>
+            </v-btn>
+          </div>
         </template>
       </v-data-table>
     </div>

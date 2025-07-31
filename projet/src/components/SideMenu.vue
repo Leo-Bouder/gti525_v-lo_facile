@@ -65,7 +65,7 @@
         @update:modelValue="dropDownChanged"
         ></DropDown>
       </div>
-      <div v-if="this.$route.name === 'Reseau'">
+      <div v-if="this.$route.name === 'Reseau'" class="reseau-filters">
         <p class="filter-label">Type du réseau :</p>
         <v-btn-toggle 
         v-model="networkType" 
@@ -83,18 +83,30 @@
         <v-checkbox v-model="sharedLane" label="Voies partagées" />
 
         <p class="filter-label">Les plus populaires :</p>
-        <v-date-input
-         label="De :"
-         v-model="dateFrom"
-         view-mode="year"
-         density="compact"
-        ></v-date-input>
-        <v-date-input
-         label="À :"
-         v-model="dateTo"
-         view-mode="year"
-         density="compact"
-        ></v-date-input>
+        <v-checkbox 
+          v-model="showPopularPistes" 
+          label="Afficher les pistes populaires"
+          class="mb-2"
+        />
+        
+        <div v-if="showPopularPistes" class="popular-dates">
+          <v-date-input
+           label="De :"
+           v-model="dateFrom"
+           density="compact"
+           variant="outlined"
+           clearable
+           @update:model-value="updatePopularDates"
+          ></v-date-input>
+          <v-date-input
+           label="À :"
+           v-model="dateTo"
+           density="compact"
+           variant="outlined"
+           clearable
+           @update:model-value="updatePopularDates"
+          ></v-date-input>
+        </div>
       </div>
 
     </v-card-text>
@@ -145,6 +157,18 @@ export default {
     networkType: {
       get() { return store.networkType },
       set(val) { store.networkType = val }
+    },
+    showPopularPistes: {
+      get() { return store.showPopularPistes },
+      set(val) { store.showPopularPistes = val }
+    },
+    dateFrom: {
+      get() { return store.dateFrom },
+      set(val) { store.dateFrom = val }
+    },
+    dateTo: {
+      get() { return store.dateTo },
+      set(val) { store.dateTo = val }
     }
   },
   mounted() {
@@ -317,6 +341,48 @@ export default {
 
     updateTerr(){
       store.arrondissement = this.selectedTerr;
+    },
+
+    updatePopularDates() {
+      console.log('=== DEBUG updatePopularDates ===');
+      console.log('dateFrom (raw):', this.dateFrom);
+      console.log('dateTo (raw):', this.dateTo);
+      console.log('dateFrom type:', typeof this.dateFrom);
+      console.log('dateTo type:', typeof this.dateTo);
+      
+      // Conversion des dates en string YYYY-MM-DD si ce sont des objets Date
+      let from = this.dateFrom instanceof Date
+        ? this.dateFrom.toISOString().slice(0, 10)
+        : this.dateFrom;
+      let to = this.dateTo instanceof Date
+        ? this.dateTo.toISOString().slice(0, 10)
+        : this.dateTo;
+      
+      console.log('dateFrom converti:', from);
+      console.log('dateTo converti:', to);
+      
+      // Mise à jour du store
+      store.dateFrom = from;
+      store.dateTo = to;
+      
+      console.log('store.dateFrom après mise à jour:', store.dateFrom);
+      console.log('store.dateTo après mise à jour:', store.dateTo);
+      console.log('store.showPopularPistes:', store.showPopularPistes);
+      
+      // Forcer la mise à jour si les deux dates sont présentes
+      if (store.dateFrom && store.dateTo) {
+        console.log('Les deux dates sont présentes, déclenchement de loadGeoJsonData...');
+        // Déclencher directement via le store
+        store.triggerPopularPistesUpdate = true;
+      }
+      
+      // Émettre un événement pour notifier le parent
+      this.$emit('popular-dates-changed', {
+        dateFrom: this.dateFrom,
+        dateTo: this.dateTo
+      });
+      
+      console.log('=== FIN updatePopularDates ===');
     }
 
   }
@@ -332,6 +398,9 @@ export default {
   background-color: var(--primary-main);
   border-radius: 0;
   padding-left: 1rem;
+  overflow-y: auto;
+  padding-bottom: 120px;
+  max-height: calc(100vh - 120px);
 }
 
 @media (max-width: 960px) {
@@ -419,5 +488,35 @@ export default {
   background-color: #d1d8c0;
   border-radius: 8px;
   overflow: hidden;
+}
+
+.reseau-filters {
+  margin-bottom: 20px;
+}
+
+.reseau-filters .filter-label {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.popular-dates {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  background-color: #f9f9f9;
+  margin-bottom: 16px;
+}
+
+.popular-dates .v-date-input {
+  margin-bottom: 12px;
+}
+
+.popular-dates .v-date-input:last-child {
+  margin-bottom: 8px;
+}
+
+.popular-dates .v-btn {
+  width: 100%;
 }
 </style>

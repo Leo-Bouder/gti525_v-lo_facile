@@ -42,6 +42,7 @@
   </Modal>
   <div class="d-flex flex-column pt-4" style="height: 100%;">
     <h2 class="ml-4 pb-4" style="text-align: left;">Pistes et voies cyclables</h2>
+    
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; flex-direction: column;">
       <v-card class="district-map-sidebar" elevation="0">
         <v-card-text class="pa-0">
@@ -76,8 +77,15 @@
             <p>Nombre de pistes : {{ nombrePistes }}</p>
             <p>Nombre de Km : {{ longueurTotaleKm.toFixed(2) }}</p>
           </div>
+
         </v-card-text>
       </v-card>
+      
+      <!-- Composant pour les informations sur les pistes populaires -->
+      <PopularPistesInfo 
+        :nombre-pistes="nombrePistes"
+        :longueur-totale-km="longueurTotaleKm"
+      />
     </div>
   </div>
 </template>
@@ -88,10 +96,11 @@ import { store } from '../components/store';
 import { nextTick, watch } from 'vue';
 import Modal from '../components/Modal.vue';
 import axios from 'axios';
+import PopularPistesInfo from '../components/PopularPistesInfo.vue';
 
 export default {
   name: 'Reseau',
-  components: { Modal },
+  components: { Modal, PopularPistesInfo },
   data() {
     return {
       map: null,
@@ -99,8 +108,8 @@ export default {
       geojsonData: null,
       loading: true,
       dropDownItems: {
-        items: [],
-        title: "Arrondissement"
+        items:[],
+        title:"Arrondissement"
       },
       selectedTerr: "",
       currentLayer: null,
@@ -115,6 +124,34 @@ export default {
     requestIdleCallback(() => {
       this.initMap()
     })
+    
+    // Test immédiat des pistes populaires
+    console.log('=== MOUNTED - TEST INITIAL ===');
+    console.log('store.showPopularPistes:', store.showPopularPistes);
+    console.log('store.dateFrom:', store.dateFrom);
+    console.log('store.dateTo:', store.dateTo);
+    
+    // Écouter l'événement de mise à jour forcée
+    watch(() => store.triggerPopularPistesUpdate, (newValue) => {
+      if (newValue) {
+        console.log('=== Reseau: triggerPopularPistesUpdate détecté ===');
+        console.log('store.showPopularPistes:', store.showPopularPistes);
+        console.log('store.dateFrom:', store.dateFrom);
+        console.log('store.dateTo:', store.dateTo);
+        if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+          console.log('Forçage de loadGeoJsonData...');
+          this.loadGeoJsonData();
+        } else {
+          console.log('Conditions non remplies pour loadGeoJsonData');
+          console.log('showPopularPistes:', store.showPopularPistes);
+          console.log('dateFrom:', store.dateFrom);
+          console.log('dateTo:', store.dateTo);
+        }
+        // Réinitialiser le trigger
+        store.triggerPopularPistesUpdate = false;
+      }
+    });
+    
     // Watch sur le store pour la sélection d'arrondissement et les cases à cocher
     watch(() => store.arrondissement, () => {
       this.updateStatsAndLayer();
@@ -128,13 +165,85 @@ export default {
     watch(() => store.networkType, () => {
       this.updateStatsAndLayer();
     });
+    // Nouveaux watchers pour les pistes populaires
+    watch(() => store.showPopularPistes, (newValue) => {
+      console.log('=== WATCHER showPopularPistes ===');
+      console.log('Nouvelle valeur:', newValue);
+      this.loadGeoJsonData();
+    });
+    watch(() => store.dateFrom, (newValue) => {
+      console.log('=== WATCHER dateFrom ===');
+      console.log('Nouvelle valeur:', newValue);
+      if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+        console.log('Déclenchement loadGeoJsonData depuis dateFrom');
+        this.loadGeoJsonData();
+      }
+    });
+    watch(() => store.dateTo, (newValue) => {
+      console.log('=== WATCHER dateTo ===');
+      console.log('Nouvelle valeur:', newValue);
+      if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+        console.log('Déclenchement loadGeoJsonData depuis dateTo');
+        this.loadGeoJsonData();
+      }
+    });
   },
   methods: {
     async loadGeoJsonData() {
       try {
         this.loading = true
 
-        this.geojsonData = (await axios.get(`http://localhost:8000/gti525/v1/pistes`)).data;
+        // Construire l'URL avec les paramètres de popularité si activés
+        let url = `http://localhost:8000/gti525/v1/pistes`;
+        const params = new URLSearchParams();
+        
+        console.log('=== DEBUG loadGeoJsonData ===');
+        console.log('store.showPopularPistes:', store.showPopularPistes);
+        console.log('store.dateFrom:', store.dateFrom);
+        console.log('store.dateTo:', store.dateTo);
+        console.log('store.dateFrom type:', typeof store.dateFrom);
+        console.log('store.dateTo type:', typeof store.dateTo);
+        
+        if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+          // Utiliser les dates telles quelles si elles sont au format YYYY-MM-DD
+          // Sinon, convertir l'année au format YYYY-MM-DD
+          let dateFromFormatted = store.dateFrom;
+          let dateToFormatted = store.dateTo;
+          
+          // Si ce n'est qu'une année (4 chiffres), convertir au format YYYY-MM-DD
+          if (store.dateFrom && store.dateFrom.length === 4) {
+            dateFromFormatted = `${store.dateFrom}-01-01`;
+          }
+          if (store.dateTo && store.dateTo.length === 4) {
+            dateToFormatted = `${store.dateTo}-12-31`;
+          }
+          
+          console.log('dateFromFormatted:', dateFromFormatted);
+          console.log('dateToFormatted:', dateToFormatted);
+          
+          params.append('populaireDebut', dateFromFormatted);
+          params.append('populaireFin', dateToFormatted);
+          url += `?${params.toString()}`;
+          console.log('loadGeoJsonData - URL avec popularité:', url);
+        } else {
+          console.log('loadGeoJsonData - URL sans popularité:', url);
+          console.log('Raison: showPopularPistes=', store.showPopularPistes, 'dateFrom=', store.dateFrom, 'dateTo=', store.dateTo);
+        }
+
+        console.log('loadGeoJsonData - Appel API...');
+        const response = await axios.get(url);
+        console.log('loadGeoJsonData - Réponse reçue:', response.status);
+        console.log('loadGeoJsonData - Nombre de features:', response.data.features.length);
+        
+        // Test pour vérifier que ce sont bien des pistes populaires
+        if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+          console.log('=== TEST PISTES POPULAIRES ===');
+          console.log('URL appelée:', url);
+          console.log('Nombre de pistes reçues:', response.data.features.length);
+          console.log('Première piste:', response.data.features[0]?.properties);
+        }
+        
+        this.geojsonData = response.data;
 
         // Calcul initial (tous quartiers)
         this.updateStatsAndLayer();
@@ -144,46 +253,65 @@ export default {
         }
       } catch (error) {
         console.error('Error loading GeoJSON data:', error)
+        console.error('Error details:', error.response?.data)
+      } finally {
+        this.loading = false;
       }
     },
     updateStatsAndLayer() {
+      console.log('=== DEBUG updateStatsAndLayer ===');
+      console.log('store.showPopularPistes:', store.showPopularPistes);
+      console.log('store.dateFrom:', store.dateFrom);
+      console.log('store.dateTo:', store.dateTo);
+      console.log('this.geojsonData.features.length:', this.geojsonData.features.length);
+      
       let filteredFeatures = this.geojsonData.features;
 
-      // Filtre arrondissement
-      if (store.arrondissement && store.arrondissement !== 'ALL') {
-        filteredFeatures = filteredFeatures.filter(f =>
-          f.properties &&
-          (f.properties.Arrondissement === store.arrondissement ||
-           f.properties.NOM_ARR_VILLE_DESC === store.arrondissement)
-        );
-      }
-
-      // Filtre type de voie
-      const protCodes = [4, 5, 6, 7];
-      const sharedCodes = [1, 3, 8, 9];
-      if (!store.protectedLane && !store.sharedLane) {
-        filteredFeatures = [];
-      } else if (store.protectedLane !== store.sharedLane) {
-        if (store.protectedLane) {
-          filteredFeatures = filteredFeatures.filter(f => protCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
-        } else if (store.sharedLane) {
-          filteredFeatures = filteredFeatures.filter(f => sharedCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
+      // Si on est en mode pistes populaires, ne pas appliquer les filtres normaux
+      if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+        console.log('Mode pistes populaires activé - pas de filtrage supplémentaire');
+        console.log('Nombre de pistes populaires:', filteredFeatures.length);
+      } else {
+        console.log('Mode normal - application des filtres');
+        
+        // Filtre arrondissement
+        if (store.arrondissement && store.arrondissement !== 'ALL') {
+          filteredFeatures = filteredFeatures.filter(f =>
+            f.properties &&
+            (f.properties.Arrondissement === store.arrondissement ||
+             f.properties.NOM_ARR_VILLE_DESC === store.arrondissement)
+          );
         }
-      }
-      // Sinon (les deux cochées) : on garde tout
 
-      // Filtre saison
-      console.log('networkType:', store.networkType);
-      console.log('Avant filtre saison:', filteredFeatures.length);
-      if (store.networkType === '4saisons') {
-        filteredFeatures = filteredFeatures.filter(f =>
-          f.properties &&
-          typeof f.properties.SAISONS4 !== 'undefined' &&
-          String(f.properties.SAISONS4).toLowerCase() === 'oui'
-        );
-      }
-      console.log('Après filtre saison:', filteredFeatures.length);
+        // Filtre type de voie
+        const protCodes = [4, 5, 6, 7];
+        const sharedCodes = [1, 3, 8, 9];
+        if (!store.protectedLane && !store.sharedLane) {
+          filteredFeatures = [];
+        } else if (store.protectedLane !== store.sharedLane) {
+          if (store.protectedLane) {
+            filteredFeatures = filteredFeatures.filter(f => protCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
+          } else if (store.sharedLane) {
+            filteredFeatures = filteredFeatures.filter(f => sharedCodes.includes(Number(f.properties.TYPE_VOIE_CODE)));
+          }
+        }
+        // Sinon (les deux cochées) : on garde tout
 
+        // Filtre saison
+        console.log('networkType:', store.networkType);
+        console.log('Avant filtre saison:', filteredFeatures.length);
+        if (store.networkType === '4saisons') {
+          filteredFeatures = filteredFeatures.filter(f =>
+            f.properties &&
+            typeof f.properties.SAISONS4 !== 'undefined' &&
+            String(f.properties.SAISONS4).toLowerCase() === 'oui'
+          );
+        }
+        console.log('Après filtre saison:', filteredFeatures.length);
+      }
+
+      console.log('Nombre final de pistes:', filteredFeatures.length);
+      
       this.filteredGeoJsonData = {
         ...this.geojsonData,
         features: filteredFeatures
@@ -231,23 +359,70 @@ export default {
       if (this.geojsonLayer) {
         this.map.removeLayer(this.geojsonLayer)
       }
-      // Toujours créer une nouvelle couche avec le style dynamique
-      this.geojsonLayer = L.geoJSON(geojsonData, {
-        style: (feature) => {
-          const cat = this.getCategorie(feature);
-          let color = '#000'; // noir par défaut pour bien voir
+      
+      // Définir le style en fonction du mode (normal ou populaire)
+      const getStyle = (feature) => {
+        const cat = this.getCategorie(feature);
+        let color = '#000'; // noir par défaut pour bien voir
+        
+        if (store.showPopularPistes && store.dateFrom && store.dateTo) {
+          // Style pour les pistes populaires (couleur rouge)
+          color = '#ff4444';
+          return {
+            color: color,
+            weight: 3,
+            opacity: 1
+          };
+        } else {
+          // Style normal avec catégorisation
           if (cat === 'REV') color = '#2AC7DD'; // bleu
           else if (cat === 'Voie partagée') color = '#84CA4B'; // vert
           else if (cat === 'Voie protégée') color = '#025D29'; // rouge
           else if (cat === 'Sentier polyvalent') color = '#B958D9'; // jaune
+          
           return {
             color: color,
             weight: 2,
             opacity: 1
-          }
+          };
         }
-      })
-      this.geojsonLayer.addTo(this.map);
+      };
+      
+      this.geojsonLayer = L.geoJSON(geojsonData, {
+        style: getStyle,
+        onEachFeature: (feature, layer) => {
+          layer.on('mouseover', () => {
+            if(this.layerIsSelected(layer)){return;}
+            layer.setStyle({
+              weight: store.showPopularPistes ? 4 : 3,
+              opacity: 1,
+              color: store.showPopularPistes ? '#ff6666' : '#90caf9'
+            })
+          })
+          
+          layer.on('mouseout', () => {
+            if(this.layerIsSelected(layer)){return;}
+            const cat = this.getCategorie(feature);
+            let color = '#000';
+            if (cat === 'REV') color = '#2AC7DD';
+            else if (cat === 'Voie partagée') color = '#84CA4B';
+            else if (cat === 'Voie protégée') color = '#025D29';
+            else if (cat === 'Sentier polyvalent') color = '#B958D9';
+            
+            layer.setStyle({
+              weight: store.showPopularPistes ? 3 : 2,
+              opacity: 1,
+              color: store.showPopularPistes ? '#ff4444' : color
+            })
+          })
+          
+          layer.on('click', () => {
+            this.selectedTerr = feature.properties.NOM
+            this.dropDownChanged(feature.properties.NOM)
+          })
+        }
+      }).addTo(this.map)
+      
       this.map.fitBounds(this.geojsonLayer.getBounds(), { padding: [10, 10] })
     },
     getCategorie(feature) {
@@ -318,7 +493,8 @@ export default {
 
 .map-container {
   position: relative;
-  height: 100%;
+  height: 400px;
+  margin: 0 12px;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid #e0e0e0;
@@ -354,24 +530,31 @@ export default {
   flex-direction: column;
 }
 
-.map-info {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1000;
-  padding: 5px;
-}
-
 .zoom-btn {
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.zoom-btn:hover {
+  background-color: #f5f5f5;
+}
+
+.map-info {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+}
+
 .info-button {
+  background-color: white;
+  border-radius: 50%;
+  padding: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   cursor: pointer;
 }
 
-.zoom-btn:hover {
+.info-button:hover {
   background-color: #f5f5f5;
 }
 
