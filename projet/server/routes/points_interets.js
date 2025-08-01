@@ -1,6 +1,7 @@
 // routes/auth.js
 const express = require('express');
 const db = require('../database');
+const authenticateToken = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -111,7 +112,8 @@ router.get('/:id', (req, res) => {
     });
 });
 
-router.post('/', (req, res) => {
+router.post('/', authenticateToken, (req, res) => {
+    console.log(req.headers);
     const { Arrondissement, Type, Nom_parc_lieu, Proximite_jeux_repere, Intersection, Etat, Date_installation, Remarque, Precision_localisation, X, Y, Longitude, Latitude } = req.body;
 
     if (!Arrondissement || !Nom_parc_lieu || !Proximite_jeux_repere || !Longitude || !Latitude || !Type) {
@@ -130,7 +132,7 @@ router.post('/', (req, res) => {
     });
 });
 
-router.patch('/:id', (req, res) => {
+router.patch('/:id', authenticateToken, (req, res) => {
     const pointId = parseInt(req.params.id);
     const updates = req.body;
 
@@ -179,7 +181,7 @@ router.patch('/:id', (req, res) => {
     });
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', authenticateToken, (req, res) => {
     const pointId = parseInt(req.params.id);
 
     if (isNaN(pointId)) {

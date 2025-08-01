@@ -2,7 +2,7 @@ const express = require('express');
 const db = require('../database');
 const router = express.Router();
 
-router.get('/pistes', (req, res)=> {
+router.get('/', (req, res)=> {
     const {populaireDebut, populaireFin} = req.query;
 
     if(populaireDebut && populaireFin){

@@ -1,6 +1,6 @@
 // middleware/auth.js
 const jwt = require('jsonwebtoken');
-const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_secret';
+const JWT_SECRET = '@secret123';
 
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
@@ -8,7 +8,6 @@ function authenticateToken(req, res, next) {
 
   const token = authHeader.split(' ')[1];
   if (!token) return res.status(401).json({ message: 'Token malformed' });
-
   jwt.verify(token, JWT_SECRET, (err, user) => {
     if (err) return res.status(403).json({ message: 'Invalid token' });
     req.user = user;

@@ -19,13 +19,6 @@ const currentItem = ref(null);
 const loading = ref(false);
 const showFilters = ref(false);
 
-// Filtres avancés
-const advancedFilters = ref({
-  statut: '',
-  arrondissement: '',
-  implantation: ''
-});
-
 // Paramètres de recherche combinés
 const combinedSearchParams = ref({
   nom: '',
@@ -242,14 +235,13 @@ const openChart = (item) => {
 
     <!-- Filtres avancés -->
     <div v-if="showFilters" class="mr-8 mb-4 ml-4">
-      <CompteurFilters 
-        v-model="advancedFilters" 
+      <CompteurFilters
         @filter="handleAdvancedFilters"
       />
     </div>
 
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
-      <v-data-table
+      <v-data-table-server
         :headers="headers"
         :items="data"
         :loading="loading"
@@ -300,7 +292,7 @@ const openChart = (item) => {
             mdi-map-marker
           </v-icon>
         </template>
-      </v-data-table>
+      </v-data-table-server>
     </div>
   </div>
 </template>

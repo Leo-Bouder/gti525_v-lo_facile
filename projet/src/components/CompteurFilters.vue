@@ -16,19 +16,9 @@ const filters = ref({
   implantation: ''
 });
 
-// Écouter les changements des filtres avec délai
-let filterTimeout;
+// Écouter les changements des filtres
 watch(filters, (newFilters) => {
-  // Annuler le timeout précédent
-  if (filterTimeout) {
-    clearTimeout(filterTimeout);
-  }
-  
-  // Émettre après un délai pour éviter les émissions multiples
-  filterTimeout = setTimeout(() => {
-    emit('update:modelValue', { ...newFilters });
-    emit('filter', { ...newFilters });
-  }, 300);
+  emit('filter', { ...newFilters });
 }, { deep: true });
 
 // Écouter les changements du modelValue
