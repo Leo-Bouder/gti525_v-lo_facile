@@ -29,7 +29,7 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
-import Button from "./button.vue";
+import Button from "./Button.vue";
 import { useRouter } from "vue-router";
 import { store } from './store'
 
