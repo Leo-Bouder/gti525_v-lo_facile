@@ -10,6 +10,8 @@ const route = useRoute()
 const pagesWithMenu = ['Interet', 'Statistiques', 'Reseau'];
 
 const hasMenu = computed(() => pagesWithMenu.includes(route.name))
+
+
 </script>
 
 <template>

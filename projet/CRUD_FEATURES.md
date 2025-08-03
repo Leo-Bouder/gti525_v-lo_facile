@@ -13,6 +13,7 @@ Ce document décrit les nouvelles fonctionnalités d'ajout, modification et supp
 - **Formulaire adaptatif** selon le type de point d'intérêt
 - **Validation des champs** avec règles personnalisées
 - **Champs conditionnels** : longitude/latitude affichés uniquement pour les fontaines
+- **Dropdown pour les arrondissements** : sélection depuis la liste complète des arrondissements de Montréal
 
 #### Vue `Points_Interet.vue` mise à jour
 - **Bouton "Ajouter"** en haut de la page
@@ -25,6 +26,7 @@ Ce document décrit les nouvelles fonctionnalités d'ajout, modification et supp
 #### Endpoints implémentés
 - `GET /gti525/v1/pointsdinteret` - Liste paginée des points d'intérêt
 - `GET /gti525/v1/pointsdinteret/:id` - Récupération d'un point d'intérêt spécifique
+- `GET /gti525/v1/pointsdinteret/arrondissements` - Liste des arrondissements de Montréal
 - `POST /gti525/v1/pointsdinteret` - Ajout d'un nouveau point d'intérêt
 - `PATCH /gti525/v1/pointsdinteret/:id` - Modification d'un point d'intérêt
 - `DELETE /gti525/v1/pointsdinteret/:id` - Suppression d'un point d'intérêt

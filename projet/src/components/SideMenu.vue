@@ -48,6 +48,32 @@
       </div>
 
       <div v-if="this.$route.name === 'Statistiques'">
+        <p class="filter-label">Statut :</p>
+        <v-select
+          v-model="selectedStatut"
+          :items="statutItems"
+          label="Statut"
+          item-title="text"
+          item-value="value"
+          variant="outlined"
+          density="compact"
+          clearable
+          @update:model-value="onStatutChange"
+        ></v-select>
+        
+        <p class="filter-label">Arrondissement :</p>
+        <v-select
+          v-model="selectedStatistiquesArrondissement"
+          :items="arrondissementItems"
+          label="Arrondissement"
+          item-title="text"
+          item-value="value"
+          variant="outlined"
+          density="compact"
+          clearable
+          @update:model-value="onStatistiquesArrondissementChange"
+        ></v-select>
+        
         <p class="filter-label">Compteurs implantés à partir de :</p>
         <v-date-input
          label="Choisir l'année"
@@ -55,15 +81,60 @@
          v-model="year"
          view-mode="year"
         ></v-date-input>
+        
+        <div class="d-flex justify-space-between mt-3">
+          <v-btn
+            color="secondary"
+            variant="outlined"
+            size="small"
+            @click="clearStatistiquesFilters"
+            :disabled="!hasActiveStatistiquesFilters"
+          >
+            <v-icon left size="small">mdi-filter-remove</v-icon>
+            Effacer
+          </v-btn>
+        </div>
       </div>
       <div v-if="this.$route.name === 'Interet'">
+        
+        <p class="filter-label">Arrondissement :</p>
+        <v-select
+          v-model="selectedArrondissement"
+          :items="arrondissementItems"
+          label="Arrondissement"
+          item-title="text"
+          item-value="value"
+          variant="outlined"
+          density="compact"
+          clearable
+          @update:model-value="onArrondissementChange"
+        ></v-select>
+        
         <p class="filter-label">Type de lieu :</p>
-        <DropDown
-        v-model="type"
-        label="Type de lieu"
-        :items="typeItems"
-        @update:modelValue="dropDownChanged"
-        ></DropDown>
+        <v-select
+          v-model="selectedType"
+          :items="typeItems"
+          label="Type de lieu"
+          item-title="text"
+          item-value="value"
+          variant="outlined"
+          density="compact"
+          clearable
+          @update:model-value="onTypeChange"
+        ></v-select>
+        
+        <div class="d-flex justify-space-between mt-3">
+          <v-btn
+            color="secondary"
+            variant="outlined"
+            size="small"
+            @click="clearFilters"
+            :disabled="!hasActiveFilters"
+          >
+            <v-icon left size="small">mdi-filter-remove</v-icon>
+            Effacer
+          </v-btn>
+        </div>
       </div>
       <div v-if="this.$route.name === 'Reseau'" class="reseau-filters">
         <p class="filter-label">Type du réseau :</p>
@@ -114,16 +185,14 @@
 </template>
 
 <script>
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-import DropDown from './DropDown.vue'
+// Import dynamique de Leaflet pour éviter les problèmes ES module
+let L = null;
 import { VDateInput } from 'vuetify/labs/VDateInput'
 import { store } from './store'
 import axios from 'axios'
 export default {
   name: 'SideMenu',
   components: {
-    DropDown,
     VDateInput
   },
   data() {
@@ -139,10 +208,22 @@ export default {
       selectedTerr: "",
       currentLayer: null,
       year: "",
+      selectedArrondissement: "",
+      selectedType: "",
+      selectedStatut: "",
+      selectedStatistiquesArrondissement: "",
       typeItems:[
-      { text: "Fontaine à boire", value: "Fontaine à boire" },
-      { text: "Atelier réparation", value: "Atelier réparation" }
-      ]
+        { text: "Fontaine", value: "Fontaine" },
+        { text: "Atelier", value: "Atelier" },
+        { text: "Stationnement", value: "Stationnement" },
+        { text: "Autre", value: "Autre" }
+      ],
+      statutItems:[
+        { text: "Actif", value: "Actif" },
+        { text: "En maintenance", value: "En maintenance" },
+        { text: "À supprimer", value: "À supprimer" }
+      ],
+      arrondissementItems: []
     }
   },
   computed: {
@@ -169,11 +250,25 @@ export default {
     dateTo: {
       get() { return store.dateTo },
       set(val) { store.dateTo = val }
+    },
+    hasActiveFilters() {
+      return this.selectedArrondissement || this.selectedType;
+    },
+    hasActiveStatistiquesFilters() {
+      return this.selectedStatut || this.selectedStatistiquesArrondissement;
     }
   },
-  mounted() {
-    this.initMap()
-    this.loadGeoJsonData()
+  async mounted() {
+    console.log('SideMenu mounted - Route:', this.$route.name);
+    try {
+      await this.initMap()
+      this.loadGeoJsonData()
+      // Charger les arrondissements pour les filtres (points d'intérêt et statistiques)
+      this.loadArrondissements()
+      console.log('SideMenu initialization completed');
+    } catch (error) {
+      console.error('Error in SideMenu mounted:', error);
+    }
   },
   beforeUnmount() {
     if (this.map) {
@@ -188,6 +283,27 @@ export default {
         }
       },
       deep: true
+    },
+    // Synchroniser les filtres avec le store
+    'store.statistiquesFilters': {
+      handler(newFilters) {
+        if (newFilters) {
+          this.selectedStatut = newFilters.statut || '';
+          this.selectedStatistiquesArrondissement = newFilters.arrondissement || '';
+        }
+      },
+      deep: true,
+      immediate: true
+    },
+    'store.pointInteretFilters': {
+      handler(newFilters) {
+        if (newFilters) {
+          this.selectedArrondissement = newFilters.arrondissement || '';
+          this.selectedType = newFilters.type || '';
+        }
+      },
+      deep: true,
+      immediate: true
     }
   },
   methods: {
@@ -210,25 +326,39 @@ export default {
         this.loading = false
       }
     },
-    initMap() {
-      const montrealLat = 45.5017
-      const montrealLng = -73.5673
-      
-      this.map = L.map(this.$refs.mapContainer, {
-        center: [montrealLat, montrealLng],
-        zoom: 10,
-        zoomControl: false,
-        attributionControl: false
-      })
-      
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-        subdomains: 'abcd',
-        maxZoom: 19
-      }).addTo(this.map)
-      
-      if (this.geojsonData) {
-        this.addGeoJsonLayer(this.geojsonData)
+    async initMap() {
+      try {
+        // Charger Leaflet de manière asynchrone
+        const leafletModule = await import('leaflet');
+        L = leafletModule.default;
+        
+        // Charger le CSS de Leaflet
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+        document.head.appendChild(link);
+        
+        const montrealLat = 45.5017
+        const montrealLng = -73.5673
+        
+        this.map = L.map(this.$refs.mapContainer, {
+          center: [montrealLat, montrealLng],
+          zoom: 10,
+          zoomControl: false,
+          attributionControl: false
+        })
+        
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+          attribution: '© OpenStreetMap contributors © CARTO',
+          subdomains: 'abcd',
+          maxZoom: 19
+        }).addTo(this.map)
+        
+        if (this.geojsonData) {
+          this.addGeoJsonLayer(this.geojsonData)
+        }
+      } catch (error) {
+        console.error('Erreur lors de l\'initialisation de la carte:', error);
       }
     },
     
@@ -333,6 +463,12 @@ export default {
       const layer = this.getLayerByTerritoryName(terr);
       this.setLayer(layer);
       this.updateTerr();
+      
+      // Mettre à jour aussi le dropdown des statistiques si on est sur la page Statistiques
+      if (this.$route.name === 'Statistiques') {
+        this.selectedStatistiquesArrondissement = terr;
+        store.statistiquesFilters.arrondissement = terr;
+      }
     },
 
     updateDate(){
@@ -383,6 +519,71 @@ export default {
       });
       
       console.log('=== FIN updatePopularDates ===');
+    },
+
+    // Méthodes pour les filtres des points d'intérêt
+    async loadArrondissements() {
+      try {
+        const response = await axios.get('http://localhost:8000/gti525/v1/pointsdinteret/arrondissements');
+        this.arrondissementItems = response.data.map(arr => ({
+          text: arr.name,
+          value: arr.name
+        }));
+      } catch (error) {
+        console.error('Erreur lors du chargement des arrondissements:', error);
+      }
+    },
+
+    onArrondissementChange(value) {
+      console.log('🔄 SideMenu - onArrondissementChange appelé avec:', value);
+      
+      // Mettre à jour le store global pour la cohérence
+      store.arrondissement = value || 'ALL';
+      // Mettre à jour les filtres des points d'intérêt
+      store.pointInteretFilters.arrondissement = value;
+      
+      console.log('🔄 SideMenu - Store mis à jour:', store.pointInteretFilters);
+      
+      // Mettre en évidence l'arrondissement sélectionné sur la carte
+      if (value && value !== 'ALL') {
+        const layer = this.getLayerByTerritoryName(value);
+        this.setLayer(layer);
+      } else {
+        // Si aucun arrondissement sélectionné, désélectionner la carte
+        this.setLayer(null);
+      }
+    },
+
+    onTypeChange() {
+      // Mettre à jour les filtres des points d'intérêt
+      store.pointInteretFilters.type = this.selectedType;
+    },
+
+    // Méthodes pour les filtres des statistiques
+    onStatutChange() {
+      store.statistiquesFilters.statut = this.selectedStatut;
+    },
+
+    onStatistiquesArrondissementChange() {
+      store.statistiquesFilters.arrondissement = this.selectedStatistiquesArrondissement;
+    },
+
+    clearStatistiquesFilters() {
+      this.selectedStatut = '';
+      this.selectedStatistiquesArrondissement = '';
+      store.statistiquesFilters.statut = '';
+      store.statistiquesFilters.arrondissement = '';
+    },
+
+    clearFilters() {
+      this.selectedArrondissement = '';
+      this.selectedType = '';
+      store.arrondissement = 'ALL';
+      store.pointInteretFilters.arrondissement = '';
+      store.pointInteretFilters.type = '';
+      
+      // Désélectionner la carte
+      this.setLayer(null);
     }
 
   }

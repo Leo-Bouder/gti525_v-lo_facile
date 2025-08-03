@@ -11,8 +11,12 @@ export default {
       year: ''
     }
   },
+
   props: {
-    haveMenu: true
+    haveMenu: {
+      type: Boolean,
+      default: true
+    }
   }
 }
 </script>
@@ -20,7 +24,7 @@ export default {
 <template>
     <div style="display: flex; height: calc(100vh - 120px);">
         <SideMenu 
-            v-if="haveMenu===true"
+            v-if="haveMenu"
         />
         <div style="display: flex; align-items: center; flex: 1; flex-direction: column;">
             <div class="main-container">

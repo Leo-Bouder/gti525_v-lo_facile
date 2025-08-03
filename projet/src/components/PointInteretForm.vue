@@ -19,12 +19,16 @@
             </v-col>
             
             <v-col cols="12" md="6">
-              <v-text-field
+              <v-select
                 v-model="formData.Arrondissement"
+                :items="arrondissements"
+                item-title="name"
+                item-value="name"
                 label="Arrondissement *"
                 required
                 :rules="[v => !!v || 'L\'arrondissement est requis']"
-              ></v-text-field>
+                :loading="loadingArrondissements"
+              ></v-select>
             </v-col>
             
             <v-col cols="12">
@@ -161,6 +165,8 @@ const emit = defineEmits(['close', 'saved']);
 const form = ref(null);
 const valid = ref(false);
 const loading = ref(false);
+const loadingArrondissements = ref(false);
+const arrondissements = ref([]);
 
 const types = ['Fontaine', 'Atelier', 'Stationnement', 'Autre'];
 
@@ -180,9 +186,27 @@ const formData = ref({
   Latitude: null
 });
 
+// Fonction pour charger les arrondissements
+const loadArrondissements = async () => {
+  if (arrondissements.value.length > 0) return; // Déjà chargés
+  
+  loadingArrondissements.value = true;
+  try {
+    const response = await axios.get('http://localhost:8000/gti525/v1/pointsdinteret/arrondissements');
+    arrondissements.value = response.data;
+  } catch (error) {
+    console.error('Erreur lors du chargement des arrondissements:', error);
+  } finally {
+    loadingArrondissements.value = false;
+  }
+};
+
 // Réinitialiser le formulaire quand on ouvre le modal
-watch(() => props.show, (newVal) => {
+watch(() => props.show, async (newVal) => {
   if (newVal) {
+    // Charger les arrondissements si pas encore fait
+    await loadArrondissements();
+    
     if (props.isEditing && props.point) {
       // Mode édition - remplir avec les données existantes
       Object.keys(formData.value).forEach(key => {

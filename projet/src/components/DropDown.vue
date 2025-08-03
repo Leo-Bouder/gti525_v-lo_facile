@@ -36,11 +36,15 @@ const realItems = computed(() => {
   return [{ text: "Tous", value: "ALL" }, ...props.items]
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'change'])
 
 const model = computed({
   get: () => props.modelValue,
-  set: (val) => {console.log("EMITTING"); emit('update:modelValue', val)}
+  set: (val) => {
+    console.log("EMITTING"); 
+    emit('update:modelValue', val);
+    emit('change', val);
+  }
 })
 </script>
 

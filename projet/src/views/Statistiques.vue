@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
 import CompteurSearch from '../components/CompteurSearch.vue';
-import CompteurFilters from '../components/CompteurFilters.vue';
 import { store } from '../components/store';
 import Modal from '../components/Modal.vue';
 import MapContainer from '../components/MapContainer.vue';
@@ -17,14 +16,10 @@ const showModalMap = ref(false)
 const showModalGraph = ref(false)
 const currentItem = ref(null);
 const loading = ref(false);
-const showFilters = ref(false);
 
-// Filtres avancés
-const advancedFilters = ref({
-  statut: '',
-  arrondissement: '',
-  implantation: ''
-});
+
+
+
 
 // Paramètres de recherche combinés
 const combinedSearchParams = ref({
@@ -88,6 +83,8 @@ const toggleModalGraph = () => {
   showModalGraph.value = !showModalGraph.value;
 }
 
+
+
 // Fonction pour charger les données depuis l'API
 const loadData = async () => {
   loading.value = true;
@@ -147,20 +144,6 @@ const handleSearch = (searchEvent) => {
   loadData();
 };
 
-// Gestionnaire de filtres avancés
-const handleAdvancedFilters = (filters) => {
-  // Mettre à jour les paramètres de recherche combinés
-  combinedSearchParams.value.statut = filters.statut || '';
-  combinedSearchParams.value.arrondissement = filters.arrondissement || '';
-  combinedSearchParams.value.implantation = filters.implantation || '';
-  
-  // Retour à la première page lors de l'application des filtres
-  pagination.value.page = 1;
-  
-  // Charger les données
-  loadData();
-};
-
 // Gestionnaire de changement de page
 const handlePageChange = (page) => {
   pagination.value.page = page;
@@ -201,6 +184,19 @@ watch(() => store.year, (newValue) => {
   loadData();
 });
 
+// Écouter les changements des filtres des statistiques
+watch(() => store.statistiquesFilters.statut, (newValue) => {
+  combinedSearchParams.value.statut = newValue || '';
+  pagination.value.page = 1;
+  loadData();
+});
+
+watch(() => store.statistiquesFilters.arrondissement, (newValue) => {
+  combinedSearchParams.value.arrondissement = newValue || '';
+  pagination.value.page = 1;
+  loadData();
+});
+
 onMounted(async () => {
   await loadData();
 });
@@ -229,24 +225,11 @@ const openChart = (item) => {
     <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
       <div class="d-flex align-center pa-4">
         <CompteurSearch v-model="search" @search="handleSearch" class="flex-grow-1"/>
-        <v-btn
-          variant="outlined"
-          class="ml-4"
-          @click="showFilters = !showFilters"
-        >
-          <v-icon>{{ showFilters ? 'mdi-chevron-up' : 'mdi-filter' }}</v-icon>
-          Filtres
-        </v-btn>
       </div>
     </v-card>
+    
 
-    <!-- Filtres avancés -->
-    <div v-if="showFilters" class="mr-8 mb-4 ml-4">
-      <CompteurFilters 
-        v-model="advancedFilters" 
-        @filter="handleAdvancedFilters"
-      />
-    </div>
+
 
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table

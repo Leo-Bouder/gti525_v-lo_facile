@@ -4,6 +4,19 @@ const db = require('../database');
 
 const router = express.Router();
 
+// Endpoint pour récupérer tous les arrondissements
+router.get('/arrondissements', (req, res) => {
+    const sql = `SELECT name, id, mat FROM arrondissements ORDER BY name`;
+    
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error('Error fetching arrondissements:', err.message);
+            return res.status(500).json({ error: 'Internal server error' });
+        }
+        res.status(200).json(rows);
+    });
+});
+
 router.get('/', (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const page = parseInt(req.query.page) || 1;

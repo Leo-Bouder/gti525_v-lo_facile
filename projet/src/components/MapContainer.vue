@@ -26,13 +26,9 @@
 <script>
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-import DropDown from './DropDown.vue'
-import { VDateInput } from 'vuetify/labs/VDateInput'
 export default {
-    name: 'SideMenu',
+    name: 'MapContainer',
     components: {
-        DropDown,
-        VDateInput
     },
     props: {
         records: {
@@ -58,6 +54,9 @@ export default {
             markerMap: new Map(),
             loading: true,
             layerGroup: null,
+            geojsonLayer: null,
+            geojsonData: null,
+            currentLayer: null,
             defaultIcon: L.icon({
                 iconUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCAyNCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNMTIgMEM1LjM3MjU4IDAgMCA1LjM3MjU4IDAgMTJDMCAyMiAxMiA0MCAxMiA0MEMxMiA0MCAyNCAyMiAyNCAxMkMyNCA1LjM3MjU4IDE4LjYyNzQgMCAxMiAwWiIgZmlsbD0iIzFGNzVCQyIvPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjQiIGZpbGw9IndoaXRlIi8+PC9zdmc+',
                 iconSize: [24, 40],
@@ -118,6 +117,109 @@ export default {
             this.setMarker(this.selectedId);
 
             this.loading = false;
+            
+            // Charger la carte GeoJSON des arrondissements
+            this.loadGeoJsonData();
+        },
+        
+        async loadGeoJsonData() {
+            try {
+                const response = await fetch('http://localhost:8000/gti525/v1/territoiresGeo');
+                this.geojsonData = await response.json();
+                
+                if (this.map && this.geojsonData) {
+                    this.addGeoJsonLayer();
+                }
+            } catch (error) {
+                console.error('Error loading GeoJSON data:', error);
+            }
+        },
+        
+        addGeoJsonLayer() {
+            if (this.geojsonLayer) {
+                this.map.removeLayer(this.geojsonLayer);
+            }
+            
+            this.geojsonLayer = L.geoJSON(this.geojsonData, {
+                style: (feature) => ({
+                    fillColor: '#e0e0e0',
+                    weight: 1,
+                    opacity: 1,
+                    color: '#666',
+                    fillOpacity: 0.3
+                }),
+                onEachFeature: (feature, layer) => {
+                    layer.on('mouseover', () => {
+                        if(this.layerIsSelected(layer)){return;}
+                        layer.setStyle({
+                            fillOpacity: 0.5,
+                            fillColor: '#90caf9'
+                        });
+                    });
+                    
+                    layer.on('mouseout', () => {
+                        if(this.layerIsSelected(layer)){return;}
+                        layer.setStyle({
+                            fillOpacity: 0.3,
+                            fillColor: '#e0e0e0'
+                        });
+                    });
+                    
+                    layer.on('click', () => {
+                        // Émettre un événement pour notifier le parent
+                        this.$emit('arrondissement-clicked', feature.properties.NOM);
+                        
+                        // Mettre en évidence l'arrondissement sélectionné
+                        const layer = this.getLayerByTerritoryName(feature.properties.NOM);
+                        this.setLayer(layer);
+                    });
+                }
+            }).addTo(this.map);
+        },
+        
+        setLayer(layer) {
+            if(!layer){
+                if(this.currentLayer){
+                    this.currentLayer.setStyle({
+                        fillOpacity: 0.3,
+                        fillColor:'#e0e0e0'
+                    });
+                }
+                this.currentLayer = null;
+                return;
+            }
+            layer.setStyle({
+                fillOpacity: 0.5,
+                fillColor: '#F9BF90'
+            });
+            if(this.currentLayer) {
+                this.currentLayer.setStyle({
+                    fillOpacity: 0.3,
+                    fillColor: '#e0e0e0'
+                });
+            }
+            this.currentLayer = layer;
+        },
+        
+        getLayerByTerritoryName(territoryName) {
+            if (!this.geojsonLayer) {
+                return null;
+            }
+            
+            let foundLayer = null;
+            
+            this.geojsonLayer.eachLayer((layer) => {
+                const properties = layer.feature.properties;
+                if (properties && properties.NOM === territoryName) {
+                    foundLayer = layer;
+                }
+            });
+            
+            return foundLayer;
+        },
+        
+        layerIsSelected(layer) {
+            return layer.options.fillColor === "#F9BF90";
         },
 
         setMarker(id, click) {

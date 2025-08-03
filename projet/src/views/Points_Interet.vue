@@ -1,11 +1,10 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import Search from '../components/Search.vue';
 import { store } from '../components/store';
 import Modal from '../components/Modal.vue';
 import MapContainer from '../components/MapContainer.vue';
 import PointInteretForm from '../components/PointInteretForm.vue';
-import PointInteretFilters from '../components/PointInteretFilters.vue';
 import axios from 'axios';
 
 const search = ref('')
@@ -17,10 +16,11 @@ const showModal = ref(false)
 const showFormModal = ref(false)
 const editingPoint = ref(null)
 const isEditing = ref(false)
-const filters = ref({
-  arrondissement: '',
-  type: ''
-})
+
+
+
+// Utiliser le store pour les filtres
+const filters = computed(() => store.pointInteretFilters);
 
 const headers = [
     {
@@ -90,36 +90,36 @@ const toggleModal = () => {
   }
 }
 
-const filteredData = computed(()=> {
+const filteredData = computed(() => {
   let filtered = data.value;
   
-  // Filtre par arrondissement (store global)
-  if(store.arrondissement && store.arrondissement !== 'ALL'){
-    filtered = filtered.filter(item =>{
-      const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
-      const selectedArr = store.arrondissement.trim().toLowerCase();
-      return itemArr === selectedArr;
+  console.log('🔍 DEBUG - Filtrage - Données totales:', filtered.length);
+  console.log('🔍 DEBUG - Filtrage - Filtres actuels:', filters.value);
+  
+  if (filters.value.arrondissement && filters.value.arrondissement.trim() !== '') {
+    const selectedArr = filters.value.arrondissement.trim().toLowerCase().normalize('NFD').replace(/\s+/g, '').replace(/[\u0300-\u036f]/g, '');
+    console.log('🔍 DEBUG - Filtrage par arrondissement:', filters.value.arrondissement);
+    console.log('🔍 DEBUG - Arrondissement normalisé:', selectedArr);
+    
+    filtered = filtered.filter(item => {
+      // Gérer les deux clés possibles
+      const itemArr = (item['Arrondissement'] || item['arrondissement'] || '').trim().toLowerCase().normalize('NFD').replace(/\s+/g, '').replace(/[\u0300-\u036f]/g, '');
+      const matches = itemArr === selectedArr;
+      console.log(`🔍 DEBUG - Comparaison: "${itemArr}" === "${selectedArr}" = ${matches}`);
+      return matches;
     });
+    console.log('🔍 DEBUG - Résultat après filtre arrondissement:', filtered.length);
   }
   
-  // Filtre par arrondissement (filtres locaux)
-  if(filters.value.arrondissement){
-    filtered = filtered.filter(item =>{
-      const itemArr = (item['Arrondissement'] || '').trim().toLowerCase();
-      const selectedArr = filters.value.arrondissement.trim().toLowerCase();
-      return itemArr === selectedArr;
-    });
-  }
-  
-  // Filtre par type
-  if(filters.value.type){
-    filtered = filtered.filter(item =>{
+  if (filters.value.type && filters.value.type.trim() !== '') {
+    filtered = filtered.filter(item => {
       const itemType = (item['Type'] || '').trim().toLowerCase();
       const selectedType = filters.value.type.trim().toLowerCase();
       return itemType === selectedType;
     });
   }
   
+  console.log('🔍 DEBUG - Données filtrées finales:', filtered.length);
   return filtered;
 });
 
@@ -156,6 +156,16 @@ onMounted(async () => {
     console.error('Erreur lors du chargement des données:', error);
   }
 });
+
+// Watcher pour forcer la réactivité des filtres
+watch(() => filters.value, (newFilters) => {
+  // Forcer la réactivité des filtres
+}, { deep: true });
+
+// Watcher spécifique pour l'arrondissement
+watch(() => filters.value.arrondissement, (newArrondissement) => {
+  // Forcer la réactivité de l'arrondissement
+}, { immediate: true });
 
 const selectedArrondissementForMap = ref('');
 
@@ -205,9 +215,20 @@ const deletePoint = async (item) => {
   }
 };
 
-const handleFilterChange = (newFilters) => {
-  filters.value = newFilters;
+// Méthode pour gérer le clic sur un arrondissement dans la carte
+const onArrondissementClicked = (arrondissementName) => {
+  console.log('🔄 Points_Interet - Arrondissement cliqué:', arrondissementName);
+  
+  // Mettre à jour le store
+  store.pointInteretFilters.arrondissement = arrondissementName;
+  store.arrondissement = arrondissementName;
+  
+  console.log('🔄 Points_Interet - Store mis à jour:', store.pointInteretFilters);
 };
+
+
+
+
 
 </script>
 
@@ -217,6 +238,7 @@ const handleFilterChange = (newFilters) => {
       :records="mapData" 
       :selectedId="selectedId"
       :selected-arrondissement="selectedArrondissementForMap"
+      @arrondissement-clicked="onArrondissementClicked"
     />
   </Modal>
   
@@ -240,13 +262,7 @@ const handleFilterChange = (newFilters) => {
         </v-btn>
       </div>
       
-      <!-- Filtres -->
-      <div class="mr-8 mb-4 ml-4">
-        <PointInteretFilters 
-          :data="data"
-          @filter-change="handleFilterChange"
-        />
-      </div>
+
       
       <!-- Barre de recherche -->
       <v-card variant="flat" class="mr-8 mb-4 ml-4" style="min-height: fit-content; background-color: var(--primary-main);">
@@ -257,7 +273,9 @@ const handleFilterChange = (newFilters) => {
             :display-fields="['ID', 'Arrondissement', 'Nom_parc_lieu']"
           />
         </div>
-      </v-card>  
+      </v-card>
+      
+  
     
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
       <v-data-table

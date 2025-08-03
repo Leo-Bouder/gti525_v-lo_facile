@@ -14,5 +14,15 @@ export const store = reactive({
   dateFrom: "",
   dateTo: "",
   showPopularPistes: false,
-  triggerPopularPistesUpdate: false
+  triggerPopularPistesUpdate: false,
+  // Filtres pour les points d'intérêt
+  pointInteretFilters: {
+    arrondissement: "",
+    type: ""
+  },
+  // Filtres pour les statistiques
+  statistiquesFilters: {
+    statut: "",
+    arrondissement: ""
+  }
 })
