@@ -91,25 +91,24 @@ const toggleModal = () => {
 }
 
 const filteredData = computed(() => {
-const filteredData = computed(() => {
   let filtered = data.value;
   
-  console.log('🔍 DEBUG - Filtrage - Données totales:', filtered.length);
-  console.log('🔍 DEBUG - Filtrage - Filtres actuels:', filters.value);
+  console.log('DEBUG - Filtrage - Données totales:', filtered.length);
+  console.log('DEBUG - Filtrage - Filtres actuels:', filters.value);
   
   if (filters.value.arrondissement && filters.value.arrondissement.trim() !== '') {
     const selectedArr = filters.value.arrondissement.trim().toLowerCase().normalize('NFD').replace(/\s+/g, '').replace(/[\u0300-\u036f]/g, '');
-    console.log('🔍 DEBUG - Filtrage par arrondissement:', filters.value.arrondissement);
-    console.log('🔍 DEBUG - Arrondissement normalisé:', selectedArr);
+    console.log('DEBUG - Filtrage par arrondissement:', filters.value.arrondissement);
+    console.log('DEBUG - Arrondissement normalisé:', selectedArr);
     
     filtered = filtered.filter(item => {
       // Gérer les deux clés possibles
       const itemArr = (item['Arrondissement'] || item['arrondissement'] || '').trim().toLowerCase().normalize('NFD').replace(/\s+/g, '').replace(/[\u0300-\u036f]/g, '');
       const matches = itemArr === selectedArr;
-      console.log(`🔍 DEBUG - Comparaison: "${itemArr}" === "${selectedArr}" = ${matches}`);
+      console.log(`DEBUG - Comparaison: "${itemArr}" === "${selectedArr}" = ${matches}`);
       return matches;
     });
-    console.log('🔍 DEBUG - Résultat après filtre arrondissement:', filtered.length);
+    console.log('DEBUG - Résultat après filtre arrondissement:', filtered.length);
   }
   
   if (filters.value.type && filters.value.type.trim() !== '') {
@@ -120,7 +119,7 @@ const filteredData = computed(() => {
     });
   }
   
-  console.log('🔍 DEBUG - Données filtrées finales:', filtered.length);
+  console.log('DEBUG - Données filtrées finales:', filtered.length);
   return filtered;
 });
 
@@ -231,11 +230,6 @@ const onArrondissementClicked = (arrondissementName) => {
   
   console.log('🔄 Points_Interet - Store mis à jour:', store.pointInteretFilters);
 };
-
-
-
-
-
 </script>
 
 <template>
