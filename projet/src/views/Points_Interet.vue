@@ -23,7 +23,7 @@ const isEditing = ref(false)
 const filters = computed(() => store.pointInteretFilters);
 
 const headers = [
-    {
+  {
     title: 'ID',
     text: 'ID',
     key: 'ID',
@@ -91,6 +91,7 @@ const toggleModal = () => {
 }
 
 const filteredData = computed(() => {
+const filteredData = computed(() => {
   let filtered = data.value;
   
   console.log('🔍 DEBUG - Filtrage - Données totales:', filtered.length);
@@ -126,7 +127,7 @@ const filteredData = computed(() => {
 // Données spécifiques pour la carte (filtrées par arrondissement du point sélectionné)
 const mapData = computed(() => {
   if (selectedArrondissementForMap.value) {
-    return data.value.filter(item => 
+    return data.value.filter(item =>
       item.Arrondissement === selectedArrondissementForMap.value
     );
   }
@@ -135,12 +136,12 @@ const mapData = computed(() => {
 
 const sortedData = computed(() => {
   if (!sortBy.value.length) return filteredData.value;
-  
+
   const key = sortBy.value[0];
   return [...filteredData.value].sort((a, b) => {
     const aValue = a[key];
     const bValue = b[key];
-    
+
     if (sortDesc.value) {
       return aValue > bValue ? -1 : 1;
     }
@@ -204,7 +205,12 @@ const handleFormSaved = async (savedPoint) => {
 const deletePoint = async (item) => {
   if (confirm('Êtes-vous sûr de vouloir supprimer ce point d\'intérêt ?')) {
     try {
-      await axios.delete(`http://localhost:8000/gti525/v1/pointsdinteret/${item.ID}`);
+      await axios.delete(`http://localhost:8000/gti525/v1/pointsdinteret/${item.ID}`, {
+        //Adding token to the request
+        headers: {
+          'Authorization': `Bearer ${store.token}`
+        }
+      });
       // Recharger toutes les données pour s'assurer que l'interface est à jour
       const response = await axios.get(`http://localhost:8000/gti525/v1/pointsdinteret?limit=1000`);
       data.value = response.data.data;
@@ -278,32 +284,19 @@ const onArrondissementClicked = (arrondissementName) => {
   
     
     <div class="mr-8 mb-4 ml-4" style="display: flex; flex:1; min-height: 0;">
-      <v-data-table
-        v-model:search="search"
-        :headers="headers"
-        :items="sortedData"
-        :items-per-page="20"
-        class="elevation-2 rounded-lg bg-light-green-lighten-5"
-        density="comfortable"
-        hover
-        bordered
-        fixed-header
-      >
+      <v-data-table v-model:search="search" :headers="headers" :items="sortedData" :items-per-page="20"
+        class="elevation-2 rounded-lg bg-light-green-lighten-5" density="comfortable" hover bordered fixed-header>
         <template #headers="{ columns }">
           <tr>
-            <th 
-              v-for="column in columns" 
-              :key="column.key" 
-              style="background: var(--primary-main); color: #213547; cursor: pointer;"
-              @click="() => {
+            <th v-for="column in columns" :key="column.key"
+              style="background: var(--primary-main); color: #213547; cursor: pointer;" @click="() => {
                 if (sortBy[0] === column.key) {
                   sortDesc = !sortDesc;
                 } else {
                   sortBy = [column.key];
                   sortDesc = false;
                 }
-              }"
-            >
+              }">
               {{ column.text }}
               <v-icon v-if="sortBy[0] === column.key" size="small">
                 {{ sortDesc ? 'mdi-arrow-down' : 'mdi-arrow-up' }}
@@ -312,33 +305,17 @@ const onArrondissementClicked = (arrondissementName) => {
           </tr>
         </template>
         <template #[`item.map`]="{ item }">
-          <v-icon
-            size="small"
-            @click="openMap(item)"
-            color="var(--accent-color)"
-          >
+          <v-icon size="small" @click="openMap(item)" color="var(--accent-color)">
             mdi-map-marker
           </v-icon>
         </template>
-        
+
         <template #[`item.actions`]="{ item }">
           <div class="d-flex gap-2">
-            <v-btn
-              size="small"
-              color="primary"
-              variant="outlined"
-              @click="openFormModal(item)"
-              icon
-            >
+            <v-btn size="small" color="primary" variant="outlined" @click="openFormModal(item)" icon>
               <v-icon size="small">mdi-pencil</v-icon>
             </v-btn>
-            <v-btn
-              size="small"
-              color="error"
-              variant="outlined"
-              @click="deletePoint(item)"
-              icon
-            >
+            <v-btn size="small" color="error" variant="outlined" @click="deletePoint(item)" icon>
               <v-icon size="small">mdi-delete</v-icon>
             </v-btn>
           </div>

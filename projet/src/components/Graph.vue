@@ -9,21 +9,21 @@
     <div v-if="!loading" class="graph-controls">
       <div class="date-selector">
         <label for="startDate">From:</label>
-        <input type="date" id="startDate" v-model="startDate" @change="updateChart(true)" />
+        <input type="date" id="startDate" v-model="startDate" @change="updateChart()" />
 
         <label for="endDate">To:</label>
-        <input type="date" id="endDate" v-model="endDate" @change="updateChart(true)" />
+        <input type="date" id="endDate" v-model="endDate" @change="updateChart()" />
       </div>
 
       <div class="interval-selector">
         <label>
-          <input type="radio" v-model="interval" value="day" @change="updateChart(false)" /> Day
+          <input type="radio" v-model="interval" value="jour" @change="updateChart()" /> Day
         </label>
         <label>
-          <input type="radio" v-model="interval" value="week" @change="updateChart(false)" /> Week
+          <input type="radio" v-model="interval" value="semaine" @change="updateChart()" /> Week
         </label>
         <label>
-          <input type="radio" v-model="interval" value="month" @change="updateChart(false)" /> Month
+          <input type="radio" v-model="interval" value="mois" @change="updateChart()" /> Month
         </label>
       </div>
     </div>
@@ -40,7 +40,6 @@
 <script>
 import { Bar } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
-import moment from 'moment';
 import axios from 'axios';
 
 ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale);
@@ -62,7 +61,7 @@ export default {
       loading: false,
       startDate: null,
       endDate: null,
-      interval: 'day',
+      interval: 'jour',
       chartData: null,
       chartOptions: {
         responsive: true,
@@ -121,48 +120,15 @@ export default {
       this.startDate = "2022-01-01";
     },
 
-    async updateChart(refreshData) {
-      if(refreshData || !this.filteredData) {
-        this.filteredData = await axios.get(`http://localhost:8000/gti525/v1/compteurs/${this.selectedId}?debut=${this.startDate}&fin=${this.endDate}`);
-      }
+    async updateChart() {
+      const response = await axios.get(`http://localhost:8000/gti525/v1/compteurs/${this.selectedId}/passages?debut=${this.startDate}&fin=${this.endDate}&interval=${this.interval}`);
+      this.filteredData = response.data;
 
-      const aggregatedData = [];
-
-      this.filteredData.data.forEach(item => {
-        const itemDate = moment(item.date_heure);
-        let key;
-
-        if (this.interval === 'day') {
-          key = itemDate.format('YYYY-MM-DD');
-        } else if (this.interval === 'week') {
-          key = itemDate.startOf('isoWeek').format('YYYY-MM-DD [Week] WW');
-        } else if (this.interval === 'month') {
-          key = itemDate.format('YYYY-MM');
-        }
-
-        const passages = item.nb_passages;
-
-        if (aggregatedData[key]) {
-          aggregatedData[key] += passages;
-        } else {
-          aggregatedData[key] = passages;
-        }
-      });
-
-      const sortedKeys = Object.keys(aggregatedData).sort((a, b) => {
-        if (this.interval === 'day' || this.interval === 'month') {
-          return moment(a).valueOf() - moment(b).valueOf();
-        } else if (this.interval === 'week') {
-          return moment(a.split(' ')[0]).valueOf() - moment(b.split(' ')[0]).valueOf();
-        }
-        return 0;
-      });
-
-      const labels = sortedKeys;
-      const dataValues = sortedKeys.map(key => aggregatedData[key]);
+      const sortedKeys = this.filteredData.map(d => d.periode);
+      const dataValues = this.filteredData.map(d => d.total_passages);
 
       this.chartData = {
-        labels: labels,
+        labels: sortedKeys,
         datasets: [
           {
             label: 'Passages total',

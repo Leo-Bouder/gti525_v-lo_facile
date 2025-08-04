@@ -19,7 +19,7 @@ app.use(express.json());
 app.use('/gti525/v1/auth', authRoutes);
 app.use('/gti525/v1/compteurs', compteursRoutes);
 app.use('/gti525/v1/pointsdinteret', poiRoutes);
-app.use('/gti525/v1', pistesRoutes);
+app.use('/gti525/v1/pistes', pistesRoutes);
 
 app.get('/gti525/v1/compteurs', (req, res)=>{
     const results = [];
@@ -70,7 +70,16 @@ app.get('/gti525/v1/', (req, res) => {
     message: 'Available API endpoints',
     endpoints: [
       { method: 'POST', path: '/gti525/v1/auth/signup' },
-      { method: 'POST', path: '/gti525/v1/auth/login' }
+      { method: 'POST', path: '/gti525/v1/auth/login' },
+      { method: 'GET', path: '/gti525/v1/pistes' },
+      { method: 'GET', path: '/gti525/v1/compteurs' },
+      { method: 'GET', path: '/gti525/v1/compteurs/:id' },
+      { method: 'GET', path: '/gti525/v1/compteurs/:id/passages' },
+      { method: 'GET', path: '/gti525/v1/pointsdinteret' },
+      { method: 'GET', path: '/gti525/v1/pointsdinteret/:id' },
+      { method: 'POST', path: '/gti525/v1/pointsdinteret' },
+      { method: 'PATCH', path: '/gti525/v1/pointsdinteret/:id' },
+      { method: 'DELETE', path: '/gti525/v1/pointsdinteret/:id' },
     ],
   });
 });
